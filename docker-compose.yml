@@ -1,0 +1,16 @@
+---
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - hpcadmin_server_go_db:/var/lib/postgresql/data
+volumes:
+  hpcadmin_server_go_db:
+    driver: local

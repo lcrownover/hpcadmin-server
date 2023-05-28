@@ -1,0 +1,11 @@
+module github.com/lcrownover/hpcadmin-server
+
+go 1.18
+
+require (
+	github.com/ajg/form v1.5.1 // indirect
+	github.com/go-chi/chi/v5 v5.0.8 // indirect
+	github.com/go-chi/docgen v1.2.0 // indirect
+	github.com/go-chi/render v1.0.2 // indirect
+	github.com/lib/pq v1.10.9 // indirect
+)
