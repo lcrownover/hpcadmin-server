@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 
@@ -17,13 +18,14 @@ func main() {
 
 	flag.Parse()
 
-	db.MakeMigrations()
-
 	connStr := "postgresql://postgres:postgres@localhost/hpcadmin?sslmode=disable"
 	dbConn, err := db.GetDBConnection(connStr)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err.Error())
 	}
 
-	api.Run(dbConn)
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "dbConn", dbConn)
+
+	api.Run(ctx)
 }
