@@ -3,62 +3,37 @@ package api
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/lcrownover/hpcadmin-server/internal/db"
 	"github.com/lcrownover/hpcadmin-server/internal/types"
-	"net/http"
 )
 
-func Run(dbConn *sql.DB) {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.URLFormat)
-	r.Use(render.SetContentType(render.ContentTypeJSON))
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
-
-	r.Route("/users", func(r chi.Router) {
-		r.Get("/", GetAllUsers)
-		r.Post("/", CreateUser)
-		r.Route("/{userID}", func(r chi.Router) {
-			r.Use(UserCtx)
-			// r.Get("/", db.GetUserById(dbConn, userID))
-		})
-	})
-
-	fmt.Println("Listening on :3333")
-	http.ListenAndServe(":3333", r)
-
+type APIHandler struct {
+	dbConn *sql.DB
 }
 
-func GetAllUsers(w http.ResponseWriter, r *http.Request) { }
-
-func GetUserById(w http.ResponseWriter, r *http.Request) {
-	// Assume if we've reach this far, we can access the user
-	// context because this handler is a child of the UserCtx
-	// middleware. The worst case, the recoverer middleware will save us.
-	user := r.Context().Value("user").(*types.User)
-
-	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
-		render.Render(w, r, ErrRender(err))
-		return
-	}
-}
-
-func UserCtx(next http.Handler) http.Handler {
+func (h *APIHandler) UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user *types.User
 		var err error
 
 		if userID := chi.URLParam(r, "userID"); userID != "" {
-			user, err = db.GetUserById(dbConn, userID)
+			id, err := strconv.Atoi(userID)
+			if err != nil {
+				render.Render(w, r, ErrNotFound)
+				return
+			}
+			user, err = db.GetUserById(h.dbConn, id)
+			if err != nil {
+				render.Render(w, r, ErrNotFound)
+			}
 		} else {
 			render.Render(w, r, ErrNotFound)
 			return
@@ -73,18 +48,89 @@ func UserCtx(next http.Handler) http.Handler {
 	})
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	data := &types.UserCreate{}
+func (a *APIHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (a *APIHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
+	// Assume if we've reach this far, we can access the user
+	// context because this handler is a child of the UserCtx
+	// middleware. The worst case, the recoverer middleware will save us.
+	user := r.Context().Value("user").(*types.User)
+
+	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
+		render.Render(w, r, ErrRender(err))
+		return
+	}
+}
+
+func (a *APIHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	data := &UserRequest{}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
 
 	user := data.User
-	dbNewArticle(user)
+	newUser, err := db.NewUser(a.dbConn, user)
+	if err != nil {
+		render.Render(w, r, ErrInvalidRequest(err))
+	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, NewUserResponse(user))
+	render.Render(w, r, NewUserResponse(newUser))
+}
+
+func Run(dbConn *sql.DB) {
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
+	r.Use(render.SetContentType(render.ContentTypeJSON))
+
+	a := &APIHandler{dbConn: dbConn}
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("hello world"))
+	})
+
+	r.Route("/users", func(r chi.Router) {
+		r.Get("/", a.GetAllUsers)
+		r.Post("/", a.CreateUser)
+		r.Route("/{userID}", func(r chi.Router) {
+			r.Use(a.UserCtx)
+			r.Get("/", a.GetUserById)
+		})
+	})
+
+	fmt.Println("Listening on :3333")
+	http.ListenAndServe(":3333", r)
+
+}
+
+type UserResponse struct {
+	User *types.User `json:"user,omitempty"`
+}
+
+func NewUserResponse(user *types.User) *UserResponse {
+	resp := &UserResponse{User: user}
+	return resp
+}
+
+func (ur *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type UserRequest struct {
+	User *types.UserCreate `json:"user,omitempty"`
+}
+
+func (ur *UserRequest) Bind(r *http.Request) error {
+	if ur.User == nil {
+		return errors.New("missing required User fields")
+	}
+	return nil
 }
 
 //--
