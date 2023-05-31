@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -65,13 +64,12 @@ func (a *APIHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *APIHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	data := &UserRequest{}
-	if err := render.Bind(r, data); err != nil {
+	user := &types.UserCreate{}
+	if err := render.Bind(r, user); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
 
-	user := data.User
 	newUser, err := db.NewUser(a.dbConn, user)
 	if err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -128,7 +126,7 @@ type UserRequest struct {
 
 func (ur *UserRequest) Bind(r *http.Request) error {
 	if ur.User == nil {
-		return errors.New("missing required User fields")
+		return fmt.Errorf("missing required User fields: %+v", ur)
 	}
 	return nil
 }
