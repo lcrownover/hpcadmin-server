@@ -3,8 +3,8 @@ package db
 import (
 	"log"
 
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 )
 
 func MakeMigrations() {
