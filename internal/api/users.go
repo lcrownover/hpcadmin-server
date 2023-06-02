@@ -3,9 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -17,87 +15,80 @@ type UserHandler struct {
 	dbConn *sql.DB
 }
 
+// UserCtx middleware is used to load a User object from /users/{username} requests
+// and then attach it to the request context. In case of failure the request is aborted
+// and a 404 error response is sent to the client.
 func (h *UserHandler) UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var user *types.User
+		var user *types.UserResponse
 		var err error
 
-		if userID := chi.URLParam(r, "userID"); userID != "" {
-			id, err := strconv.Atoi(userID)
-			if err != nil {
-				render.Render(w, r, ErrNotFound)
-				return
-			}
-			user, err = db.GetUserById(h.dbConn, id)
-			if err != nil {
-				render.Render(w, r, ErrNotFound)
-			}
-		} else {
+		username := chi.URLParam(r, "username")
+		if username == "" {
 			render.Render(w, r, ErrNotFound)
 			return
 		}
+		user, err = db.GetUserByUsername(h.dbConn, username)
 		if err != nil {
 			render.Render(w, r, ErrNotFound)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), types.UserKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func (a *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+// GetAllUsers returns all existing users
+func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	var users []*types.UserResponse
 
-}
+	users, err := db.GetAllUsers(h.dbConn)
+	if err != nil {
+		render.Render(w, r, ErrInternalServer)
+		return
+	}
 
-func (a *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	// Assume if we've reach this far, we can access the user
-	// context because this handler is a child of the UserCtx
-	// middleware. The worst case, the recoverer middleware will save us.
-	user := r.Context().Value("user").(*types.User)
-
-	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
+	if err := render.Render(w, r, NewAPIResponse(users)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
 }
 
-func (a *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	user := &types.UserCreate{}
+// GetUserById returns a single user by id, but is not currently used
+// func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
+// 	user := r.Context().Value(types.UserKey).(*types.User)
+
+// 	if err := render.Render(w, r, NewAPIResponse(user)); err != nil {
+// 		render.Render(w, r, ErrRender(err))
+// 		return
+// 	}
+// }
+
+// GetUserByUsername returns a single user by username, which is basically the primary key
+func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(types.UserKey).(*types.UserResponse)
+
+	if err := render.Render(w, r, NewAPIResponse(user)); err != nil {
+		render.Render(w, r, ErrRender(err))
+		return
+	}
+}
+
+// CreateUser creates a new user
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	user := &types.UserRequest{}
 	if err := render.Bind(r, user); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
 
-	newUser, err := db.NewUser(a.dbConn, user)
+	newUser, err := db.NewUser(h.dbConn, user)
 	if err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
+		return
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, NewUserResponse(newUser))
-}
-
-type UserResponse struct {
-	User *types.User `json:"user,omitempty"`
-}
-
-func NewUserResponse(user *types.User) *UserResponse {
-	resp := &UserResponse{User: user}
-	return resp
-}
-
-func (ur *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-type UserRequest struct {
-	User *types.UserCreate `json:"user,omitempty"`
-}
-
-func (ur *UserRequest) Bind(r *http.Request) error {
-	if ur.User == nil {
-		return fmt.Errorf("missing required User fields: %+v", ur)
-	}
-	return nil
+	render.Render(w, r, NewAPIResponse(newUser))
 }

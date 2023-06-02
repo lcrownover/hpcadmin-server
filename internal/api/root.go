@@ -1,9 +1,10 @@
 package api
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
-	"context"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,7 +19,8 @@ func Run(ctx context.Context) {
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
-	u := &UserHandler{dbConn: ctx.Value("dbConn")}
+	dbConn := ctx.Value("dbConn").(*sql.DB)
+	u := &UserHandler{dbConn: dbConn}
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hello world"))
@@ -27,15 +29,28 @@ func Run(ctx context.Context) {
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/", u.GetAllUsers)
 		r.Post("/", u.CreateUser)
-		r.Route("/{userID}", func(r chi.Router) {
+		r.Route("/{username}", func(r chi.Router) {
 			r.Use(u.UserCtx)
-			r.Get("/", u.GetUserById)
+			r.Get("/", u.GetUserByUsername)
 		})
 	})
 
 	fmt.Println("Listening on :3333")
 	http.ListenAndServe(":3333", r)
 
+}
+
+type APIResponse struct {
+	Results any `json:"results"`
+}
+
+func NewAPIResponse(d any) *APIResponse {
+	resp := &APIResponse{Results: d}
+	return resp
+}
+
+func (a *APIResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
 }
 
 //--
@@ -80,3 +95,4 @@ func ErrRender(err error) render.Renderer {
 }
 
 var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, StatusText: "Resource not found."}
+var ErrInternalServer = &ErrResponse{HTTPStatusCode: 500, StatusText: "Internal server error."}

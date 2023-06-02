@@ -1,11 +1,14 @@
 package types
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 )
 
-type User struct {
+const UserKey key = "UserKey"
+
+type UserResponse struct {
 	Id        int       `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
@@ -15,18 +18,22 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (u *User) Bind(r *http.Request) error {
+func (u *UserResponse) Bind(r *http.Request) error {
 	return nil
 }
 
-type UserCreate struct {
+type UserRequest struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
 }
 
-func (u *UserCreate) Bind(r *http.Request) error {
+func (u *UserRequest) Bind(r *http.Request) error {
+	if u.Username == "" || u.Email == "" || u.Firstname == "" || u.Lastname == "" {
+		return fmt.Errorf("missing required User fields: %+v", u)
+	}
+	// add in more checks like alphanumeric, length, etc.
 	return nil
 }
 
