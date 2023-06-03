@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/lcrownover/hpcadmin-server/internal/types"
 )
 
 func Run(ctx context.Context) {
@@ -19,12 +20,8 @@ func Run(ctx context.Context) {
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
-	dbConn := ctx.Value("dbConn").(*sql.DB)
+	dbConn := ctx.Value(types.DBKey).(*sql.DB)
 	u := &UserHandler{dbConn: dbConn}
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
 
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/", u.GetAllUsers)

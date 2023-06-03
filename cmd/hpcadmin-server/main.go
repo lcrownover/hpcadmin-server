@@ -7,6 +7,7 @@ import (
 
 	"github.com/lcrownover/hpcadmin-server/internal/api"
 	"github.com/lcrownover/hpcadmin-server/internal/db"
+	"github.com/lcrownover/hpcadmin-server/internal/types"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "dbConn", dbConn)
+	ctx = context.WithValue(ctx, types.DBKey, dbConn)
 
 	api.Run(ctx)
 }
