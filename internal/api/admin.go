@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
+
+type key string
 
 // A completely separate router for administrator routes
 func AdminRouter() chi.Router {

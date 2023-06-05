@@ -13,8 +13,6 @@ import (
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
-type key string
-
 const UserKey key = "UserKey"
 
 type UserResponse struct {
@@ -61,6 +59,20 @@ type UserHandler struct {
 
 func NewUserHandler(dbConn *sql.DB) *UserHandler {
 	return &UserHandler{dbConn: dbConn}
+}
+
+func UsersRouter(dbConn *sql.DB) http.Handler {
+	r := chi.NewRouter()
+	u := NewUserHandler(dbConn)
+	r.Get("/", u.GetAllUsers)
+	r.Post("/", u.CreateUser)
+	r.Route("/{userID}", func(r chi.Router) {
+		r.Use(u.UserCtx)
+		r.Get("/", u.GetUser)
+		r.Put("/", u.UpdateUser)
+		r.Delete("/", u.DeleteUser)
+	})
+	return r
 }
 
 // GetAllUsers returns all existing users

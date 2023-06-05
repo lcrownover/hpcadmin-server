@@ -25,9 +25,9 @@ type UserRequest struct {
 	LastName  string
 }
 
-func GetDBConnection(connectionString string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", connectionString)
-	return db, err
+type UserStub struct {
+	Id       int
+	Username string
 }
 
 func GetAllUsers(db *sql.DB) ([]*User, error) {
