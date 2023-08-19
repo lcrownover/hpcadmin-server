@@ -45,21 +45,13 @@ func newPostgresDB(dbr DBRequest) (*sql.DB, error) {
 }
 
 func WipeDB(db *sql.DB) error {
-	_, err := db.Exec("DELETE FROM users")
-	if err != nil {
-		return fmt.Errorf("failed to delete users: %v", err.Error())
-	}
-	_, err = db.Exec("DELETE FROM pirgs")
-	if err != nil {
-		return fmt.Errorf("failed to delete pirgs: %v", err.Error())
-	}
-	_, err = db.Exec("ALTER SEQUENCE users_id_seq RESTART WITH 1")
-	if err != nil {
-		return fmt.Errorf("failed to reset users_id_seq: %v", err.Error())
-	}
-	_, err = db.Exec("ALTER SEQUENCE pirgs_pirgsid_seq RESTART WITH 1")
-	if err != nil {
-		return fmt.Errorf("failed to reset users_id_seq: %v", err.Error())
+	tables := []string{"pirgs_users", "pirgs_groups", "pirgs_admins", "groups_users", "pirgs", "users"}
+	for _, table := range tables {
+        q := fmt.Sprintf("DELETE FROM %s", table)
+		_, err := db.Exec(q)
+		if err != nil {
+			return fmt.Errorf("failed to delete %s: %v", table, err.Error())
+		}
 	}
 	return nil
 }

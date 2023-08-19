@@ -11,11 +11,10 @@ func TestGetUserById(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-    WipeDB(db)
 	defer db.Close()
     ur := UserRequest{
-        Username: "testuser",
-        Email: "testuser@localhost",
+        Username: "testgetuserbyid",
+        Email: "testgetuserbyid@localhost",
         FirstName: "Test",
         LastName: "User",
     }
@@ -43,11 +42,10 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-    WipeDB(db)
 	defer db.Close()
     ur := UserRequest{
-        Username: "testuser",
-        Email: "testuser@localhost",
+        Username: "testcreateuser",
+        Email: "testcreateuser@localhost",
         FirstName: "Test",
         LastName: "User",
     }
@@ -72,22 +70,91 @@ func TestCreateUser(t *testing.T) {
     }
 }
 
+func TestUpdateUser(t *testing.T) {
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+    ur := UserRequest{
+        Username: "testupdateuser",
+        Email: "testupdateuser@localhost",
+        FirstName: "Test",
+        LastName: "User",
+    }
+    user, err := CreateUser(db, &ur)
+    if err != nil {
+        t.Fatal(err)
+    }
+    updatedUr := UserRequest{
+        Username: "testupdateuser2",
+        Email: "testupdateuser2@localhost",
+        FirstName: "Test2",
+        LastName: "User2",
+    }
+    err = UpdateUser(db, user.Id, &updatedUr)
+    if err != nil {
+        t.Fatal(err)
+    }
+    user2, err := GetUserById(db, user.Id)
+    if err != nil {
+        t.Fatal(err)
+    }
+    if user2.Username != updatedUr.Username {
+        t.Fatal("expected usernames to match")
+    }
+    if user2.Email != updatedUr.Email {
+        t.Fatal("expected emails to match")
+    }
+    if user2.FirstName != updatedUr.FirstName {
+        t.Fatal("expected first names to match")
+    }
+    if user2.LastName != updatedUr.LastName {
+        t.Fatal("expected last names to match")
+    }
+}
+
+func TestDeleteUser(t *testing.T) {
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+    ur := UserRequest{
+        Username: "testdeleteuser",
+        Email: "testdeleteuser@localhost",
+        FirstName: "Test",
+        LastName: "User",
+    }
+    user, err := CreateUser(db, &ur)
+    if err != nil {
+        t.Fatal(err)
+    }
+    err = DeleteUser(db, user.Id)
+    if err != nil {
+        t.Fatal(err)
+    }
+    _, err = GetUserById(db, user.Id)
+    if err == nil {
+        t.Fatal("expected error getting deleted user")
+    }
+}
+
 func TestGetAllUsers(t *testing.T) {
 	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
-    WipeDB(db)
 	defer db.Close()
 	ur1 := UserRequest{
-		Username:  "testuser",
-		Email:     "testuser@localhost",
+		Username:  "testgetallusers",
+		Email:     "testgetallusers@localhost",
 		FirstName: "Test",
 		LastName:  "User",
 	}
 	ur2 := UserRequest{
-		Username:  "testuser2",
-		Email:     "testuser2@localhost",
+		Username:  "testgetallusers2",
+		Email:     "testgetallusers2@localhost",
 		FirstName: "Test",
 		LastName:  "User2",
 	}
