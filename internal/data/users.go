@@ -25,11 +25,6 @@ type UserRequest struct {
 	LastName  string
 }
 
-type UserStub struct {
-	Id       int
-	Username string
-}
-
 func GetAllUsers(db *sql.DB) ([]*User, error) {
 	var users []*User
 	rows, err := db.Query("SELECT id, username, email, firstname, lastname, created_at, updated_at FROM users")

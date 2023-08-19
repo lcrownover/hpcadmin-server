@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -12,7 +12,9 @@ import (
 	"github.com/go-chi/docgen"
 	"github.com/go-chi/render"
 
+	keys "github.com/lcrownover/hpcadmin-server/internal"
 	"github.com/lcrownover/hpcadmin-server/internal/api"
+	"github.com/lcrownover/hpcadmin-server/internal/data"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -24,11 +26,23 @@ func main() {
 
 	flag.Parse()
 
-	connStr := "postgresql://postgres:postgres@localhost/hpcadmin?sslmode=disable"
-	dbConn, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err.Error())
+	dbRequest := data.DBRequest{
+		Driver:     "postgres",
+		Host:       "localhost",
+		Port:       "5432",
+		User:       "postgres",
+		Password:   "postgres",
+		DBName:     "hpcadmin",
+		DisableSSL: true,
 	}
+
+	dbConn, err := data.NewDBConn(dbRequest)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, keys.DBConnKey, dbConn)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -38,8 +52,8 @@ func main() {
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Mount("/admin", api.AdminRouter())
 
-	r.Mount("/users", api.UsersRouter(dbConn))
-	r.Mount("/pirgs", api.PirgsRouter(dbConn))
+	r.Mount("/users", api.UsersRouter(ctx))
+	r.Mount("/pirgs", api.PirgsRouter(ctx))
 
 	if *docs != "" {
 		api.GenerateDocs(r, *docs)

@@ -1,0 +1,65 @@
+package data
+
+import (
+	"database/sql"
+	"fmt"
+)
+
+type DBRequest struct {
+	Driver     string
+	Host       string
+	Port       string
+	User       string
+	Password   string
+	DBName     string
+	DisableSSL bool
+}
+
+func NewDBConn(dbr DBRequest) (*sql.DB, error) {
+	switch dbr.Driver {
+	case "postgres":
+		db, err := newPostgresDB(dbr)
+		if err != nil {
+			err = fmt.Errorf("failed to create postgres database: %v", err.Error())
+			return nil, err
+		}
+		return db, nil
+	default:
+		return nil, fmt.Errorf("unsupported database driver: %s", dbr.Driver)
+	}
+}
+
+func newPostgresDB(dbr DBRequest) (*sql.DB, error) {
+	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s", dbr.User, dbr.Password, dbr.Host, dbr.DBName)
+	if dbr.DisableSSL {
+		connStr = connStr + "?sslmode=disable"
+	}
+	dbConn, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %v", err.Error())
+	}
+	if err = dbConn.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err.Error())
+	}
+	return dbConn, nil
+}
+
+func WipeDB(db *sql.DB) error {
+	_, err := db.Exec("DELETE FROM users")
+	if err != nil {
+		return fmt.Errorf("failed to delete users: %v", err.Error())
+	}
+	_, err = db.Exec("DELETE FROM pirgs")
+	if err != nil {
+		return fmt.Errorf("failed to delete pirgs: %v", err.Error())
+	}
+	_, err = db.Exec("ALTER SEQUENCE users_id_seq RESTART WITH 1")
+	if err != nil {
+		return fmt.Errorf("failed to reset users_id_seq: %v", err.Error())
+	}
+	_, err = db.Exec("ALTER SEQUENCE pirgs_pirgsid_seq RESTART WITH 1")
+	if err != nil {
+		return fmt.Errorf("failed to reset users_id_seq: %v", err.Error())
+	}
+	return nil
+}

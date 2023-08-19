@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	keys "github.com/lcrownover/hpcadmin-server/internal"
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
-const UserKey key = "UserKey"
 
 type UserResponse struct {
 	Id        int       `json:"id"`
@@ -48,22 +48,13 @@ func (u *UserRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type UserStub struct {
-	Id       int
-	Username string
-}
-
 type UserHandler struct {
 	dbConn *sql.DB
 }
 
-func NewUserHandler(dbConn *sql.DB) *UserHandler {
-	return &UserHandler{dbConn: dbConn}
-}
-
-func UsersRouter(dbConn *sql.DB) http.Handler {
+func UsersRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()
-	u := NewUserHandler(dbConn)
+	u := NewUserHandler(ctx)
 	r.Get("/", u.GetAllUsers)
 	r.Post("/", u.CreateUser)
 	r.Route("/{userID}", func(r chi.Router) {
@@ -73,6 +64,11 @@ func UsersRouter(dbConn *sql.DB) http.Handler {
 		r.Delete("/", u.DeleteUser)
 	})
 	return r
+}
+
+func NewUserHandler(ctx context.Context) *UserHandler {
+	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
+	return &UserHandler{dbConn: dbConn}
 }
 
 // GetAllUsers returns all existing users
@@ -93,7 +89,7 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 // GetUserById returns a single user by id, but is not currently used
 func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(UserKey).(*data.User)
+	user := r.Context().Value(keys.UserKey).(*data.User)
 
 	if err := render.Render(w, r, newUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
@@ -141,14 +137,14 @@ func (h *UserHandler) UserCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), UserKey, user)
+		ctx := context.WithValue(r.Context(), keys.UserKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // GetUser returns the user in the request context
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(UserKey).(*data.User)
+	user := r.Context().Value(keys.UserKey).(*data.User)
 	if err := render.Render(w, r, newUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
 	}
@@ -156,7 +152,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates a user
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(UserKey).(*data.User)
+	user := r.Context().Value(keys.UserKey).(*data.User)
 	userReq := newUserRequest(user)
 	if err := render.Bind(r, userReq); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -180,7 +176,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(UserKey).(*data.User)
+	user := r.Context().Value(keys.UserKey).(*data.User)
 	err := data.DeleteUser(h.dbConn, user.Id)
 	if err != nil {
 		render.Render(w, r, ErrNotFound)
