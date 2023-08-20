@@ -26,13 +26,13 @@ func main() {
 
 	flag.Parse()
 
+    // TODO(lcrown): This should be read from env, or config file
 	dbRequest := data.DBRequest{
-		Driver:     "postgres",
 		Host:       "localhost",
 		Port:       5432,
 		User:       "postgres",
 		Password:   "postgres",
-		DBName:     "hpcadmin",
+		DBName:     "hpcadmin_test",
 		DisableSSL: true,
 	}
 

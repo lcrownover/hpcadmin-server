@@ -1,13 +1,17 @@
 package data
 
 import (
-	"database/sql"
 	"os"
 	"testing"
+    "log"
 )
 
 func TestMain(m *testing.M) {
-	db, _ := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+	db, err := NewDBConn(dbr)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	WipeDB(db)
 
 	code := m.Run()
@@ -16,9 +20,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestNewDBConnPostgres(t *testing.T) {
+func TestNewDBConn(t *testing.T) {
 	dbr := DBRequest{
-		Driver:     "postgres",
 		Host:       "localhost",
 		Port:       5432,
 		User:       "postgres",
@@ -32,14 +35,3 @@ func TestNewDBConnPostgres(t *testing.T) {
 	defer db.Close()
 }
 
-func TestNewDBConnSQLite(t *testing.T) {
-	dbr := DBRequest{
-		Driver:     "sqlite3",
-        File:       "hpcadmin.db",
-	}
-	db, err := NewDBConn(dbr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-}

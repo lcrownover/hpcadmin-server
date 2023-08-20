@@ -1,16 +1,16 @@
 package data
 
 import (
-	"database/sql"
 	"testing"
 )
 
 
 func TestCreatePirg(t *testing.T) {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testcreatepirguser",
@@ -41,10 +41,11 @@ func TestCreatePirg(t *testing.T) {
 }
 
 func TestGetAllPirgs(t *testing.T) {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testgetallpirgsuser",

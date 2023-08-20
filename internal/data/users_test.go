@@ -2,15 +2,15 @@
 package data
 
 import (
-	"database/sql"
 	"testing"
 )
 
 func TestGetUserById(t *testing.T) { 
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testgetuserbyid",
@@ -38,10 +38,11 @@ func TestGetUserById(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) { 
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testcreateuser",
@@ -71,10 +72,11 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testupdateuser",
@@ -115,10 +117,11 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur := UserRequest{
         Username: "testdeleteuser",
@@ -141,10 +144,11 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=hpcadmin sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
+    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+    db, err := NewDBConn(dbr)
+    if err != nil {
+        t.Fatal(err)
+    }
 	defer db.Close()
     ur1 := UserRequest{
 		Username:  "testgetallusers",

@@ -3,12 +3,13 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	"os"
+	"strconv"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type DBRequest struct {
-	Driver     string
-	File       string
 	Host       string
 	Port       int
 	User       string
@@ -17,44 +18,42 @@ type DBRequest struct {
 	DisableSSL bool
 }
 
-func NewDBConn(dbr DBRequest) (*sql.DB, error) {
-	switch dbr.Driver {
-	case "postgres":
-		db, err := newPostgresDB(dbr)
-		if err != nil {
-			err = fmt.Errorf("failed to create postgres database: %v", err.Error())
-			return nil, err
-		}
-		return db, nil
-	case "sqlite3":
-		db, err := newSqliteDB(dbr)
-		if err != nil {
-			err = fmt.Errorf("failed to create sqlite database: %v", err.Error())
-			return nil, err
-		}
-		return db, nil
-	default:
-		return nil, fmt.Errorf("unsupported database driver: %s", dbr.Driver)
+func NewDBRequest(host string, port int, user, password, dbname string, disableSSL bool) (DBRequest, error) {
+	if envHost := os.Getenv("POSTGRES_HOST"); envHost != "" {
+		host = envHost
 	}
+	if envPort := os.Getenv("POSTGRES_PORT"); envPort != "" {
+		envPort, err := strconv.Atoi(envPort)
+		if err != nil {
+			return DBRequest{}, fmt.Errorf("failed to convert POSTGRES_PORT to int: %v", err.Error())
+		}
+		port = envPort
+	}
+	if envUser := os.Getenv("POSTGRES_USER"); envUser != "" {
+		user = envUser
+	}
+	if envPassword := os.Getenv("POSTGRES_PASSWORD"); envPassword != "" {
+		password = envPassword
+	}
+	if envDBName := os.Getenv("POSTGRES_DATABASE"); envDBName != "" {
+		dbname = envDBName
+	}
+	return DBRequest{
+		Host:       host,
+		Port:       port,
+		User:       user,
+		Password:   password,
+		DBName:     dbname,
+		DisableSSL: disableSSL,
+	}, nil
 }
 
-func newPostgresDB(dbr DBRequest) (*sql.DB, error) {
+func NewDBConn(dbr DBRequest) (*sql.DB, error) {
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s/%s", dbr.User, dbr.Password, dbr.Host, dbr.DBName)
 	if dbr.DisableSSL {
 		connStr = connStr + "?sslmode=disable"
 	}
 	dbConn, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err.Error())
-	}
-	if err = dbConn.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err.Error())
-	}
-	return dbConn, nil
-}
-
-func newSqliteDB(dbr DBRequest) (*sql.DB, error) {
-	dbConn, err := sql.Open("sqlite3", dbr.File)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %v", err.Error())
 	}
