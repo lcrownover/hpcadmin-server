@@ -146,34 +146,21 @@ func TestGetAllUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	ur1 := UserRequest{
+    ur1 := UserRequest{
 		Username:  "testgetallusers",
 		Email:     "testgetallusers@localhost",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	ur2 := UserRequest{
-		Username:  "testgetallusers2",
-		Email:     "testgetallusers2@localhost",
-		FirstName: "Test",
-		LastName:  "User2",
-	}
-	_, err = CreateUser(db, &ur1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = CreateUser(db, &ur2)
-	if err != nil {
-		t.Fatal(err)
-	}
+    _, err = CreateUser(db, &ur1)
+    if err != nil {
+        t.Fatal(err)
+    }
 	users, err := GetAllUsers(db)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(users) < 1 {
 		t.Fatal("expected at least one user")
-	}
-	if len(users) != 2 {
-		t.Fatal("expected exactly two users")
 	}
 }

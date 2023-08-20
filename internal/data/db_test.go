@@ -15,3 +15,31 @@ func TestMain(m *testing.M) {
 
 	os.Exit(code)
 }
+
+func TestNewDBConnPostgres(t *testing.T) {
+	dbr := DBRequest{
+		Driver:     "postgres",
+		Host:       "localhost",
+		Port:       5432,
+		User:       "postgres",
+		Password:   "postgres",
+		DisableSSL: true,
+	}
+	db, err := NewDBConn(dbr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+}
+
+func TestNewDBConnSQLite(t *testing.T) {
+	dbr := DBRequest{
+		Driver:     "sqlite3",
+        File:       "hpcadmin.db",
+	}
+	db, err := NewDBConn(dbr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+}
