@@ -9,7 +9,7 @@ POSTGRES_USERNAME ?= postgres
 POSTGRES_PASSWORD ?= postgres
 POSTGRES_DATABASE ?= hpcadmin_test
 
-initdb:
+migrate:
 	@migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
 
 build:
@@ -21,5 +21,5 @@ run: build
 docs: build
 	@./bin/hpcadmin-server -docs=markdown
 
-test: initdb
+test: migrate
 	@go test ./...

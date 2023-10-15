@@ -32,6 +32,27 @@ func (u *PirgResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func newPirgResponse(u *data.Pirg) *PirgResponse {
+	return &PirgResponse{
+		Id:        u.Id,
+		Name:      u.Name,
+		OwnerId:   u.OwnerId,
+		AdminIds:  u.AdminIds,
+		UserIds:   u.UserIds,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
+}
+
+// newPirgResponseList converts a list of PirgResponse objects into a list of render.Renderer objects
+func newPirgResponseList(Pirgs []*data.Pirg) []render.Renderer {
+	list := []render.Renderer{}
+	for _, pirg := range Pirgs {
+		list = append(list, newPirgResponse(pirg))
+	}
+	return list
+}
+
 type PirgRequest struct {
 	Name     string `json:"name"`
 	OwnerId  int    `json:"owner_id"`
@@ -47,6 +68,15 @@ func (u *PirgRequest) Bind(r *http.Request) error {
 	return nil
 }
 
+func newPirgRequest(u *data.Pirg) *PirgRequest {
+	return &PirgRequest{
+		Name:     u.Name,
+		OwnerId:  u.OwnerId,
+		AdminIds: u.AdminIds,
+		UserIds:  u.UserIds,
+	}
+}
+
 type PirgStub struct {
 	Id       int
 	Pirgname string
@@ -57,21 +87,21 @@ type PirgHandler struct {
 }
 
 func PirgsRouter(ctx context.Context) http.Handler {
-
 	r := chi.NewRouter()
-	p := NewPirgHandler(ctx)
-	r.Get("/", p.GetAllPirgs)
-	r.Post("/", p.CreatePirg)
+	h := newPirgHandler(ctx)
+	r.Get("/", h.GetAllPirgs)
+	r.Post("/", h.CreatePirg)
 	r.Route("/{pirgID}", func(r chi.Router) {
-		r.Use(p.PirgCtx)
-		r.Get("/", p.GetPirg)
-		r.Put("/", p.UpdatePirg)
-		r.Delete("/", p.DeletePirg)
+		r.Use(h.PirgCtx)
+		r.Get("/", h.GetPirg)
+		r.Put("/", h.UpdatePirg)
+		r.Delete("/", h.DeletePirg)
+		r.Mount("/admins", PirgAdminsRouter(ctx))
 	})
 	return r
 }
 
-func NewPirgHandler(ctx context.Context) *PirgHandler {
+func newPirgHandler(ctx context.Context) *PirgHandler {
 	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
 	return &PirgHandler{dbConn: dbConn}
 }
@@ -183,35 +213,4 @@ func (h *PirgHandler) DeletePirg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Status(r, http.StatusNoContent)
-}
-
-// Helpers
-func newPirgResponse(u *data.Pirg) *PirgResponse {
-	return &PirgResponse{
-		Id:        u.Id,
-		Name:      u.Name,
-		OwnerId:   u.OwnerId,
-		AdminIds:  u.AdminIds,
-		UserIds:   u.UserIds,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-	}
-}
-
-// newPirgResponseList converts a list of PirgResponse objects into a list of render.Renderer objects
-func newPirgResponseList(Pirgs []*data.Pirg) []render.Renderer {
-	list := []render.Renderer{}
-	for _, pirg := range Pirgs {
-		list = append(list, newPirgResponse(pirg))
-	}
-	return list
-}
-
-func newPirgRequest(u *data.Pirg) *PirgRequest {
-	return &PirgRequest{
-		Name:     u.Name,
-		OwnerId:  u.OwnerId,
-		AdminIds: u.AdminIds,
-		UserIds:  u.UserIds,
-	}
 }

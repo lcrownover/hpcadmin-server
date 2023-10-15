@@ -26,7 +26,7 @@ func main() {
 
 	flag.Parse()
 
-    // TODO(lcrown): This should be read from env, or config file
+	// TODO(lcrown): This should be read from env, or config file
 	dbRequest := data.DBRequest{
 		Host:       "localhost",
 		Port:       5432,
@@ -50,10 +50,15 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+
 	r.Mount("/admin", api.AdminRouter())
 
-	r.Mount("/users", api.UsersRouter(ctx))
-	r.Mount("/pirgs", api.PirgsRouter(ctx))
+	r.Mount("/api/v1", func(ctx context.Context) http.Handler {
+		r := chi.NewRouter()
+		r.Mount("/users", api.UsersRouter(ctx))
+		r.Mount("/pirgs", api.PirgsRouter(ctx))
+		return r
+	}(ctx))
 
 	if *docs != "" {
 		api.GenerateDocs(r, *docs)

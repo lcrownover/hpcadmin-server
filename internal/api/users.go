@@ -14,7 +14,6 @@ import (
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
-
 type UserResponse struct {
 	Id        int       `json:"id"`
 	Username  string    `json:"username"`
@@ -33,6 +32,25 @@ func (u *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func newUserResponse(u *data.User) *UserResponse {
+	return &UserResponse{
+		Id:        u.Id,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
+	}
+}
+
+// newUserResponseList converts a list of UserResponse objects into a list of render.Renderer objects
+func newUserResponseList(users []*data.User) []render.Renderer {
+	list := []render.Renderer{}
+	for _, user := range users {
+		list = append(list, newUserResponse(user))
+	}
+	return list
+}
+
 type UserRequest struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
@@ -48,25 +66,34 @@ func (u *UserRequest) Bind(r *http.Request) error {
 	return nil
 }
 
+func newUserRequest(u *data.User) *UserRequest {
+	return &UserRequest{
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
+	}
+}
+
 type UserHandler struct {
 	dbConn *sql.DB
 }
 
 func UsersRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()
-	u := NewUserHandler(ctx)
-	r.Get("/", u.GetAllUsers)
-	r.Post("/", u.CreateUser)
+	h := newUserHandler(ctx)
+	r.Get("/", h.GetAllUsers)
+	r.Post("/", h.CreateUser)
 	r.Route("/{userID}", func(r chi.Router) {
-		r.Use(u.UserCtx)
-		r.Get("/", u.GetUser)
-		r.Put("/", u.UpdateUser)
-		r.Delete("/", u.DeleteUser)
+		r.Use(h.UserCtx)
+		r.Get("/", h.GetUser)
+		r.Put("/", h.UpdateUser)
+		r.Delete("/", h.DeleteUser)
 	})
 	return r
 }
 
-func NewUserHandler(ctx context.Context) *UserHandler {
+func newUserHandler(ctx context.Context) *UserHandler {
 	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
 	return &UserHandler{dbConn: dbConn}
 }
@@ -183,33 +210,4 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Status(r, http.StatusNoContent)
-}
-
-// Helpers
-func newUserResponse(u *data.User) *UserResponse {
-	return &UserResponse{
-		Id:        u.Id,
-		Username:  u.Username,
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-		Email:     u.Email,
-	}
-}
-
-// newUserResponseList converts a list of UserResponse objects into a list of render.Renderer objects
-func newUserResponseList(users []*data.User) []render.Renderer {
-	list := []render.Renderer{}
-	for _, user := range users {
-		list = append(list, newUserResponse(user))
-	}
-	return list
-}
-
-func newUserRequest(u *data.User) *UserRequest {
-	return &UserRequest{
-		Username:  u.Username,
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-		Email:     u.Email,
-	}
 }
