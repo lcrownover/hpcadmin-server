@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -41,8 +42,20 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// TODO(lcrown): this should be in config file
+	host, found := os.LookupEnv("HOST")
+	if !found {
+		host = "localhost"
+	}
+	port, found := os.LookupEnv("PORT")
+	if !found {
+		port = "3333"
+	}
+	listenAddr := fmt.Sprintf("%s:%s", host, port)
+
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, keys.DBConnKey, dbConn)
+	ctx = context.WithValue(ctx, keys.ListenAddrKey, listenAddr)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -50,6 +63,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+
+	r.Mount("/auth", api.AuthRouter(ctx))
 
 	r.Mount("/admin", api.AdminRouter())
 
@@ -67,6 +82,6 @@ func main() {
 
 	docgen.PrintRoutes(r)
 
-	fmt.Println("Listening on :3333")
-	http.ListenAndServe(":3333", r)
+	fmt.Println("Listening on " + listenAddr)
+	http.ListenAndServe(listenAddr, r)
 }

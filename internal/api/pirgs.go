@@ -96,7 +96,7 @@ func PirgsRouter(ctx context.Context) http.Handler {
 		r.Get("/", h.GetPirg)
 		r.Put("/", h.UpdatePirg)
 		r.Delete("/", h.DeletePirg)
-		r.Mount("/admins", PirgAdminsRouter(ctx))
+		// r.Mount("/admins", PirgAdminsRouter(ctx))
 	})
 	return r
 }

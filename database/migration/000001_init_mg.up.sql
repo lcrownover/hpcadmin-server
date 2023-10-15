@@ -8,6 +8,16 @@ CREATE TABLE users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE auth (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    access_token TEXT NOT NULL,
+    expiry TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE pirgs (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
