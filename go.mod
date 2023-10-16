@@ -3,6 +3,7 @@ module github.com/lcrownover/hpcadmin-server
 go 1.18
 
 require (
+	github.com/fatih/color v1.15.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/docgen v1.2.0
 	github.com/go-chi/render v1.0.2
@@ -15,7 +16,6 @@ require (
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/fatih/color v1.15.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect

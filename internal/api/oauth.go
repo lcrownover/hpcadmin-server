@@ -53,7 +53,7 @@ func newOauthHandler(ctx context.Context) *OauthHandler {
 	}
 }
 
-func AuthRouter(ctx context.Context) http.Handler {
+func OauthRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()
 	h := newOauthHandler(ctx)
 	r.Get("/", h.Authenticate)

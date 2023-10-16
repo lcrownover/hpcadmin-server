@@ -19,7 +19,7 @@ import (
 
 type authHandler struct {
 	ctx        context.Context
-	logger     *slog.Handler
+	logger     *slog.Logger
 	listenAddr string
 	conf       *oauth2.Config
 	client     *http.Client
@@ -28,7 +28,7 @@ type authHandler struct {
 	authDoneCh chan struct{}
 }
 
-func newAuthHandler(listenAddr string, logger *slog.Handler) *authHandler {
+func newAuthHandler(listenAddr string, logger *slog.Logger) *authHandler {
 	ctx := context.Background()
 	redirectURL := fmt.Sprintf("http://%s/oauth/callback", listenAddr)
 	tenantID, found := os.LookupEnv("TENANT_ID")
@@ -109,16 +109,16 @@ func (h *authHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	listenAddr := "localhost:36664"
-	logger := slog.NewTextHandler(os.Stderr, nil)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	h := newAuthHandler(listenAddr, logger)
 	url := h.conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
 
-	log.Println(color.CyanString("You will now be taken to your browser for authentication"))
+	fmt.Println(color.CyanString("You will now be taken to your browser for authentication"))
 	time.Sleep(1 * time.Second)
 	browser.OpenURL(url)
 	time.Sleep(1 * time.Second)
-	log.Printf("Authentication URL: %s\n", url)
+	fmt.Printf("Authentication URL: %s\n", url)
 
 	go func() {
 		http.HandleFunc("/oauth/callback", h.callbackHandler)
@@ -130,7 +130,7 @@ func main() {
 	case <-h.authDoneCh:
 		break
 	case <-time.After(5 * time.Minute):
-		log.Fatal("Authentication timed out")
+		fmt.Println(color.RedString("Authentication timed out"))
 	}
 
 	fmt.Println("Authorization Token: ")

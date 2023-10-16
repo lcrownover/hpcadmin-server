@@ -22,11 +22,17 @@ cli:
 
 build: server cli
 
-run_server: server
+run-server: server
 	@./bin/hpcadmin-server
 
-run_cli: cli
+run-cli: cli
 	@./bin/hpcadmin-cli
+
+compose-up:
+	@docker compose up --build
+
+compose-down:
+	@docker compose down -v
 
 docs: build
 	@./bin/hpcadmin-server -docs=markdown

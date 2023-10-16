@@ -1,13 +1,13 @@
 package data
 
 import (
+	"log"
 	"os"
 	"testing"
-    "log"
 )
 
 func TestMain(m *testing.M) {
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
+	dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
 	db, err := NewDBConn(dbr)
 	if err != nil {
 		log.Fatalln(err)
@@ -34,4 +34,3 @@ func TestNewDBConn(t *testing.T) {
 	}
 	defer db.Close()
 }
-

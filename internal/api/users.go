@@ -126,13 +126,13 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser creates a new user
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	user := &UserRequest{}
-	if err := render.Bind(r, user); err != nil {
+	userReq := &UserRequest{}
+	if err := render.Bind(r, userReq); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
 
-	dataUser := data.UserRequest(*user)
+	dataUser := data.UserRequest(*userReq)
 
 	newUser, err := data.CreateUser(h.dbConn, &dataUser)
 	if err != nil {
