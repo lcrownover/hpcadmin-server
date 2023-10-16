@@ -64,7 +64,7 @@ func main() {
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
-	r.Mount("/auth", api.AuthRouter(ctx))
+	r.Mount("/oauth", api.OauthRouter(ctx))
 
 	r.Mount("/admin", api.AdminRouter())
 

@@ -14,7 +14,7 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
-type AuthHandler struct {
+type OauthHandler struct {
 	dbConn       *sql.DB
 	oauth2Config *oauth2.Config
 	tokenCh      chan string
@@ -22,7 +22,7 @@ type AuthHandler struct {
 	tokenTimeout time.Duration
 }
 
-func newAuthHandler(ctx context.Context) *AuthHandler {
+func newOauthHandler(ctx context.Context) *OauthHandler {
 	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
 	tenantID, found := os.LookupEnv("TENANT_ID")
 	if !found {
@@ -37,7 +37,7 @@ func newAuthHandler(ctx context.Context) *AuthHandler {
 		panic("CLIENT_SECRET not found")
 	}
 
-	var redirectURL = fmt.Sprintf("http://%s/auth/callback", ctx.Value(keys.ListenAddrKey).(string))
+	var redirectURL = fmt.Sprintf("http://%s/oauth/callback", ctx.Value(keys.ListenAddrKey).(string))
 	var oauth2Config = &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -45,7 +45,7 @@ func newAuthHandler(ctx context.Context) *AuthHandler {
 		RedirectURL:  redirectURL,
 		Scopes:       []string{"openid", "profile", "offline_access"},
 	}
-	return &AuthHandler{
+	return &OauthHandler{
 		dbConn:       dbConn,
 		oauth2Config: oauth2Config,
 		tokenCh:      make(chan string, 1),
@@ -55,20 +55,26 @@ func newAuthHandler(ctx context.Context) *AuthHandler {
 
 func AuthRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()
-	h := newAuthHandler(ctx)
+	h := newOauthHandler(ctx)
 	r.Get("/", h.Authenticate)
+	r.Get("/url", h.GetAuthURL)
 	r.Get("/callback", h.Callback)
 	return r
 }
 
-func (h *AuthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
+func (h *OauthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	url := h.oauth2Config.AuthCodeURL("", oauth2.AccessTypeOffline)
 	// browser.OpenURL(url)
 	// redirect to url
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
+func (h *OauthHandler) GetAuthURL(w http.ResponseWriter, r *http.Request) {
+	url := h.oauth2Config.AuthCodeURL("", oauth2.AccessTypeOffline)
+	w.Write([]byte(url))
+}
+
+func (h *OauthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	token, err := h.oauth2Config.Exchange(r.Context(), code)
 	if err != nil {
@@ -93,7 +99,7 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, respHTML)
 }
 
-// func (h *AuthHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
+// func (h *OauthHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 // 	// just for testing, get the stuff from env vars
 // 	tenantID, found := os.LookupEnv("TENANT_ID")
 // 	if !found {
