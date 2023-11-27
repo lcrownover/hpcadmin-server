@@ -7,6 +7,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	// Global flags for all pirg commands
+	pirgCmd.PersistentFlags().StringP("pirg", "p", "", "Specify PIRG name")
+	pirgCmd.MarkPersistentFlagRequired("pirg")
+
+	// Create a pirg
+	pirgCmd.AddCommand(createPirgCmd)
+
+	// Delete a pirg
+	deletePirgCmd.Flags().BoolP("confirm", "c", false, "Confirm pirg deletion")
+	pirgCmd.AddCommand(deletePirgCmd)
+
+	// Add a user to a pirg
+	addUserCmd.PersistentFlags().StringP("username", "u", "", "Specify Username")
+	addUserCmd.MarkFlagRequired("username")
+	pirgCmd.AddCommand(addUserCmd)
+
+	// Remove a user from a pirg
+	removeUserCmd.PersistentFlags().StringP("username", "u", "", "Specify Username")
+	removeUserCmd.MarkFlagRequired("username")
+	pirgCmd.AddCommand(removeUserCmd)
+
+	// Set the PI for a pirg
+	setPICmd.Flags().StringP("username", "u", "", "Specify username")
+	setPICmd.MarkFlagRequired("username")
+	pirgCmd.AddCommand(setPICmd)
+
+	// Add the pirg command to the root command
+	rootCmd.AddCommand(pirgCmd)
+}
+
 var pirgCmd = &cobra.Command{
 	Use:   "pirg",
 	Short: "Manage PIRGs",
@@ -41,7 +72,7 @@ var addUserCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		pirgName, _ := cmd.Flags().GetString("pirg")
-		userName, _ := cmd.Flags().GetString("user")
+		userName, _ := cmd.Flags().GetString("username")
 		slog.Debug("adding user to PIRG", "method", "addUserCmd.Run", "pirgName", pirgName, "userName", userName)
 		fmt.Printf("[todo] User %s added to PIRG %s\n", userName, pirgName)
 	},
@@ -53,7 +84,7 @@ var removeUserCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		pirgName, _ := cmd.Flags().GetString("pirg")
-		userName, _ := cmd.Flags().GetString("user")
+		userName, _ := cmd.Flags().GetString("username")
 		slog.Debug("removing user from PIRG", "method", "removeUserCmd.Run", "pirgName", pirgName, "userName", userName)
 		fmt.Printf("[todo] User %s removed from PIRG %s\n", userName, pirgName)
 	},
@@ -62,16 +93,10 @@ var removeUserCmd = &cobra.Command{
 var setPICmd = &cobra.Command{
 	Use:   "set-pi --pirg PIRGNAME --username USERNAME",
 	Short: "Set the PIRG PI",
-	Args:  cobra.ExactArgs(0),
+	// Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		pirgName, err := cmd.Flags().GetString("pirg")
-		if err != nil {
-			PrintAndExit("Required Argument: --pirg", 1)
-		}
-		userName, err := cmd.Flags().GetString("user")
-		if err != nil {
-			PrintAndExit("Required Argument: --user", 1)
-		}
+		pirgName, _ := cmd.Flags().GetString("pirg")
+		userName, _ := cmd.Flags().GetString("username")
 		slog.Debug("setting PIRG PI", "method", "setPICmd.Run", "pirgName", pirgName, "userName", userName)
 		fmt.Printf("[todo] User %s set to PI for PIRG %s\n", userName, pirgName)
 	},

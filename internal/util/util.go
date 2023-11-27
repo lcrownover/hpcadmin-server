@@ -1,7 +1,8 @@
-package cli
+package util
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"log/slog"
 	"os"
 )
@@ -23,4 +24,14 @@ func ConfigureLogging(debug bool) {
 	slog.SetDefault(logger)
 }
 
+func SuccessPrint(msg string) {
+	color.Green(msg)
+}
 
+func InfoPrint(msg string) {
+	color.Blue(msg)
+}
+
+func ErrorPrint(msg string) {
+	color.Red(msg)
+}

@@ -1,162 +1,175 @@
 package auth
 
-// none of this is used, but it's good to have for reference
+import (
+	"context"
+	"crypto/tls"
+	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"time"
 
-// import (
-// 	"context"
-// 	"crypto/tls"
-// 	"fmt"
-// 	"log/slog"
-// 	"net"
-// 	"net/http"
-// 	"net/url"
-// 	"os"
-//
-// 	"golang.org/x/oauth2"
-// 	"golang.org/x/oauth2/microsoft"
-// )
-//
-// type AuthHandler struct {
-// 	Ctx          context.Context
-// 	Logger       *slog.Logger
-// 	ListenAddr   string
-// 	Oauth2Config *oauth2.Config
-// 	HttpClient   *http.Client
-// 	HttpServer   *http.Server
-// 	HttpMux      *http.ServeMux
-// 	Token        string
-// 	AuthDoneCh   chan struct{}
-// }
-//
-// func NewAuthHandler(logger *slog.Logger) *AuthHandler {
-// 	ctx := context.Background()
-// 	listener, err := net.Listen("tcp", ":0")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	authPort := listener.Addr().(*net.TCPAddr).Port
-//
-// 	redirectURL := fmt.Sprintf("http://localhost:%d/oauth/callback", authPort)
-// 	fmt.Println(redirectURL)
-// 	tenantID, found := os.LookupEnv("TENANT_ID")
-// 	if !found {
-// 		panic("TENANT_ID not found")
-// 	}
-// 	clientID, found := os.LookupEnv("CLIENT_ID")
-// 	if !found {
-// 		panic("CLIENT_ID not found")
-// 	}
-// 	conf := &oauth2.Config{
-// 		ClientID:    clientID,
-// 		Endpoint:    microsoft.AzureADEndpoint(tenantID),
-// 		RedirectURL: redirectURL,
-// 		Scopes:      []string{"openid", "profile", "offline_access"},
-// 	}
-//
-// 	tr := &http.Transport{
-// 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-// 	}
-// 	sslclient := &http.Client{Transport: tr}
-// 	ctx = context.WithValue(ctx, oauth2.HTTPClient, sslclient)
-// 	mux := http.NewServeMux()
-// 	server := &http.Server{Addr: fmt.Sprintf("localhost:%d", authPort), Handler: mux}
-// 	return &AuthHandler{
-// 		Ctx:          ctx,
-// 		Logger:       logger,
-// 		Oauth2Config: conf,
-// 		HttpClient:   nil,
-// 		HttpMux:      mux,
-// 		HttpServer:   server,
-// 		Token:        "",
-// 		AuthDoneCh:   make(chan struct{}, 1),
-// 	}
-// }
-//
-// func (h *AuthHandler) GetAuthenticationURL() string {
-// 	return h.Oauth2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
-// }
-//
-// func (h *AuthHandler) CallbackHandler(w http.ResponseWriter, r *http.Request) {
-// 	h.Logger.Info("callbackHandler called")
-// 	queryParts, err := url.ParseQuery(r.URL.RawQuery)
-// 	if err != nil {
-// 		h.Logger.Error(err.Error())
-// 	}
-// 	code := queryParts["code"][0]
-//
-// 	// Exchange will do the handshake to retrieve the initial access token.
-// 	tok, err := h.Oauth2Config.Exchange(h.Ctx, code)
-// 	if err != nil {
-// 		h.Logger.Error(err.Error())
-// 	}
-// 	h.Token = tok.AccessToken
-//
-// 	// The HTTP Client returned by conf.Client will refresh the token as necessary.
-// 	client := h.Oauth2Config.Client(h.Ctx, tok)
-// 	h.HttpClient = client
-//
-// 	// // use the client to connect to HPCAdmin, I assume it loads the bearer token
-// 	// // into the Authorization header automatically
-// 	// serverURL := "https://hpcadmin.talapas.uoregon.edu"
-// 	// resp, err := client.Get("http://" + serverURL + "/oauth/check")
-// 	// if err != nil {
-// 	// 	log.Fatal(err)
-// 	// } else {
-// 	// 	log.Println(color.CyanString("Authentication successful"))
-// 	// }
-// 	// defer resp.Body.Close()
-//
-// 	// show succes page
-// 	successHTML := `
-// <h1>Authentication Success</h1>
-// <p>You are authenticated and can now return to the CLI.</p>
-// `
-// 	fmt.Fprint(w, successHTML)
-// 	h.AuthDoneCh <- struct{}{}
-// }
+	"github.com/pkg/browser"
 
+	"github.com/lcrownover/hpcadmin-server/internal/util"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/microsoft"
+)
 
-// this is the associated main
+const JWT_ADMIN_ROLE = "Role.Admin"
+const JWT_USER_ROLE = "Role.User"
 
-// func main() {
-// 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-// 	h := auth.NewAuthHandler(logger)
-//
-// 	fmt.Println(color.CyanString("You will now be taken to your browser for authentication"))
-//
-// 	time.Sleep(1 * time.Second)
-//
-// 	url := h.GetAuthenticationURL()
-// 	fmt.Printf("Authentication URL: %s\n", url)
-// 	browser.OpenURL(url)
-//
-// 	time.Sleep(1 * time.Second)
-//
-// 	h.HttpMux.HandleFunc("/oauth/callback", h.CallbackHandler)
-// 	err := h.HttpServer.ListenAndServe()
-// 	if err != nil {
-// 		h.Logger.Error(err.Error())
-// 	}
-//
-// 	fmt.Printf("server info: %+v\n", h.HttpServer)
-//
-// 	// go func() {
-// 	// 	http.HandleFunc("/oauth/callback", h.callbackHandler)
-// 	// 	h.server.ListenAndServe()
-// 	// }()
-//
-// 	// wait for token to be set
-// 	select {
-// 	case <-h.AuthDoneCh:
-// 		h.HttpServer.Shutdown(h.Ctx)
-// 		break
-// 	case <-time.After(1 * time.Minute):
-// 		h.HttpServer.Shutdown(h.Ctx)
-// 		fmt.Println(color.RedString("Authentication timed out"))
-// 		os.Exit(1)
-// 	}
-//
-// 	fmt.Println("Authorization Token: ")
-// 	fmt.Printf("%s\n", h.Token)
-// }
+type AzureAuthHandlerOptions struct {
+	TenantID            string
+	ClientID            string
+	ConfigDir           string
+	SkipTLSVerification bool
+}
 
+type AuthHandler struct {
+	Ctx          context.Context
+	ListenAddr   string
+	Oauth2Config *oauth2.Config
+	HttpClient   *http.Client
+	HttpServer   *http.Server
+	HttpMux      *http.ServeMux
+	Token        string
+	AuthDoneCh   chan struct{}
+}
+
+func getRandomPort() int {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic(err)
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	listener.Close()
+	return port
+}
+
+func newAzureOauth2Config(AuthPort int, TenantID string, ClientID string) *oauth2.Config {
+	redirectURL := fmt.Sprintf("http://localhost:%d/oauth/callback", AuthPort)
+	slog.Debug("redirectURL", "value", redirectURL, "method", "newAzureOauth2Config")
+	scopes := []string{fmt.Sprintf("%s/.default", ClientID)}
+	slog.Debug("scopes", "value", scopes, "method", "newAzureOauth2Config")
+	return &oauth2.Config{
+		ClientID:    ClientID,
+		Endpoint:    microsoft.AzureADEndpoint(TenantID),
+		RedirectURL: redirectURL,
+		Scopes:      scopes,
+	}
+}
+
+func NewAuthHandler(opts AzureAuthHandlerOptions) *AuthHandler {
+	ctx := context.Background()
+	authPort := getRandomPort()
+	slog.Debug("authPort", "value", authPort, "method", "NewAuthHandler")
+
+	// oauth2 config includes things like the client id,
+	// the auth endpoint, redirectURL, and scopes
+	oauthConfig := newAzureOauth2Config(authPort, opts.TenantID, opts.ClientID)
+
+	// register a custom http client that maybe skips SSL verification
+	// and store it in ctx
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: opts.SkipTLSVerification},
+	}
+	sslclient := &http.Client{Transport: tr}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, sslclient)
+
+	// create a new http server and mux
+	mux := http.NewServeMux()
+	server := &http.Server{Addr: fmt.Sprintf(":%d", authPort), Handler: mux}
+	return &AuthHandler{
+		Ctx:          ctx,
+		Oauth2Config: oauthConfig,
+		HttpClient:   sslclient,
+		HttpMux:      mux,
+		HttpServer:   server,
+		Token:        "",
+		AuthDoneCh:   make(chan struct{}, 1),
+	}
+}
+
+func (h *AuthHandler) GetAuthenticationURL() string {
+	return h.Oauth2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
+}
+
+func (h *AuthHandler) CallbackHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("callbackHandler called", "method", "CallbackHandler")
+	slog.Debug("parsing query string", "method", "CallbackHandler")
+	queryParts, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	code := queryParts["code"][0]
+
+	// Exchange will do the handshake to retrieve the initial access token.
+	slog.Debug("exchanging code for token", "method", "CallbackHandler")
+	tok, err := h.Oauth2Config.Exchange(h.Ctx, code)
+	if err != nil {
+		slog.Debug(err.Error())
+		fmt.Fprintf(w, "Authentication Code exchange failed")
+		os.Exit(1)
+	}
+	h.Token = tok.AccessToken
+
+	// The HTTP Client returned by conf.Client will refresh the token as necessary.
+	client := h.Oauth2Config.Client(h.Ctx, tok)
+	h.HttpClient = client
+
+	// show succes page
+	slog.Debug("showing success page", "method", "CallbackHandler")
+	successHTML := `
+<h1>Authentication Success</h1>
+<p>You are authenticated and can now return to the CLI.</p>
+`
+	fmt.Fprint(w, successHTML)
+	slog.Debug("sending auth done signal", "method", "CallbackHandler")
+	h.AuthDoneCh <- struct{}{}
+	slog.Debug("callbackHandler finished", "method", "CallbackHandler")
+}
+
+func (h *AuthHandler) Authenticate() error {
+	var err error
+	util.InfoPrint("You will now be taken to your browser for authentication")
+
+	time.Sleep(1 * time.Second)
+
+	url := h.GetAuthenticationURL()
+	err = browser.OpenURL(url)
+	if err != nil {
+		return fmt.Errorf("error opening browser: %v", err)
+	}
+
+	time.Sleep(1 * time.Second)
+
+	go func() {
+		h.HttpMux.HandleFunc("/oauth/callback", h.CallbackHandler)
+		slog.Debug("Starting server", "method", "Authenticate")
+		err := h.HttpServer.ListenAndServe()
+		if err != nil {
+			// This is normal behavior when the server shuts down
+			slog.Error("Server no longer listening", "method", "Authenticate")
+		}
+	}()
+
+	for n := 0; n < 1; {
+		select {
+		case <-h.AuthDoneCh:
+			slog.Debug("Authentication successful, shutting down server", "method", "Authenticate")
+			h.HttpServer.Shutdown(h.Ctx)
+			slog.Debug("Server shut down", "method", "Authenticate")
+			n++
+		case <-time.After(1 * time.Minute):
+			slog.Debug("Authentication failed, shutting down server", "method", "Authenticate")
+			h.HttpServer.Shutdown(h.Ctx)
+			slog.Debug("Server shut down", "method", "Authenticate")
+			return fmt.Errorf("authentication timed out")
+		}
+	}
+
+	return nil
+}
