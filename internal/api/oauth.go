@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	keys "github.com/lcrownover/hpcadmin-server/internal"
+	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
 )
@@ -52,6 +52,34 @@ func newOauthHandler(ctx context.Context) *OauthHandler {
 		tokenTimeout: 5 * time.Minute,
 	}
 }
+
+	// http.HandleFunc("/private", func(w http.ResponseWriter, r *http.Request) {
+	// 	authHeader := r.Header.Get("Authorization")
+	// 	if authHeader == "" {
+	// 		w.WriteHeader(http.StatusUnauthorized)
+	// 		w.Write([]byte("Unauthorized"))
+	// 		return
+	// 	}
+	// 	tokenString := authHeader[len("Bearer "):]
+	// 	token, err := auth.GetJWTFromToken(r.Context(), tokenString)
+	// 	if err != nil {
+	// 		log.Println(err.Error())
+	// 		w.WriteHeader(http.StatusUnauthorized)
+	// 		w.Write([]byte("Unauthorized"))
+	// 		return
+	// 	}
+	// 	if !auth.TokenValid(token) {
+	// 		log.Println("Token is invalid")
+	// 		w.WriteHeader(http.StatusUnauthorized)
+	// 		w.Write([]byte("Unauthorized"))
+	// 		return
+	// 	}
+	// 	if auth.CheckAdmin(r.Context(), token) {
+	// 		log.Println("User is an admin")	
+	// 	}
+	// 	w.Write([]byte("Welcome agent."))
+	// })
+
 
 func OauthRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()

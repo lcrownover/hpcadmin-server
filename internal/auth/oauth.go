@@ -18,9 +18,6 @@ import (
 	"golang.org/x/oauth2/microsoft"
 )
 
-const JWT_ADMIN_ROLE = "Role.Admin"
-const JWT_USER_ROLE = "Role.User"
-
 type AzureAuthHandlerOptions struct {
 	TenantID            string
 	ClientID            string
@@ -30,12 +27,13 @@ type AzureAuthHandlerOptions struct {
 
 type AuthHandler struct {
 	Ctx          context.Context
+	ConfigDir    string
 	ListenAddr   string
 	Oauth2Config *oauth2.Config
 	HttpClient   *http.Client
 	HttpServer   *http.Server
 	HttpMux      *http.ServeMux
-	Token        string
+	AccessToken  string
 	AuthDoneCh   chan struct{}
 }
 
@@ -67,6 +65,12 @@ func NewAuthHandler(opts AzureAuthHandlerOptions) *AuthHandler {
 	authPort := getRandomPort()
 	slog.Debug("authPort", "value", authPort, "method", "NewAuthHandler")
 
+	// ensur the config directory exists
+	err := ensureConfigDir(opts.ConfigDir)
+	if err != nil {
+		util.PrintAndExit(fmt.Sprintf("Error with configuration directory: %v\n", err), 1)
+	}
+
 	// oauth2 config includes things like the client id,
 	// the auth endpoint, redirectURL, and scopes
 	oauthConfig := newAzureOauth2Config(authPort, opts.TenantID, opts.ClientID)
@@ -84,11 +88,12 @@ func NewAuthHandler(opts AzureAuthHandlerOptions) *AuthHandler {
 	server := &http.Server{Addr: fmt.Sprintf(":%d", authPort), Handler: mux}
 	return &AuthHandler{
 		Ctx:          ctx,
+		ConfigDir:    opts.ConfigDir,
 		Oauth2Config: oauthConfig,
 		HttpClient:   sslclient,
 		HttpMux:      mux,
 		HttpServer:   server,
-		Token:        "",
+		AccessToken:  "",
 		AuthDoneCh:   make(chan struct{}, 1),
 	}
 }
@@ -114,7 +119,7 @@ func (h *AuthHandler) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Authentication Code exchange failed")
 		os.Exit(1)
 	}
-	h.Token = tok.AccessToken
+	h.AccessToken = tok.AccessToken
 
 	// The HTTP Client returned by conf.Client will refresh the token as necessary.
 	client := h.Oauth2Config.Client(h.Ctx, tok)
@@ -132,7 +137,7 @@ func (h *AuthHandler) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("callbackHandler finished", "method", "CallbackHandler")
 }
 
-func (h *AuthHandler) Authenticate() error {
+func (h *AuthHandler) Authenticate() (string, error) {
 	var err error
 	util.InfoPrint("You will now be taken to your browser for authentication")
 
@@ -141,7 +146,7 @@ func (h *AuthHandler) Authenticate() error {
 	url := h.GetAuthenticationURL()
 	err = browser.OpenURL(url)
 	if err != nil {
-		return fmt.Errorf("error opening browser: %v", err)
+		return "", fmt.Errorf("error opening browser: %v", err)
 	}
 
 	time.Sleep(1 * time.Second)
@@ -167,9 +172,60 @@ func (h *AuthHandler) Authenticate() error {
 			slog.Debug("Authentication failed, shutting down server", "method", "Authenticate")
 			h.HttpServer.Shutdown(h.Ctx)
 			slog.Debug("Server shut down", "method", "Authenticate")
-			return fmt.Errorf("authentication timed out")
+			return "", fmt.Errorf("authentication timed out")
 		}
 	}
 
+	return h.AccessToken, nil
+}
+
+func ensureConfigDir(dir string) error {
+	// ensure the config directory exists
+	slog.Debug("ensuring config directory exists", "method", "ensureConfigDir")
+	return os.MkdirAll(dir, 0755)
+}
+
+func (h *AuthHandler) LoadAccessToken() (string, bool) {
+	// load a local access token
+	slog.Debug("loading local access token", "method", "LoadAccessToken")
+	t, err := h.readAccessTokenFromFile()
+	if err != nil {
+		slog.Debug(fmt.Sprintf("error reading local access token: %v", err), "method", "LoadAccessToken")
+		return "", false
+	}
+	jwtToken, err := GetJWTFromTokenString(t)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("error getting JWT from token: %v", err), "method", "LoadAccessToken")
+		return "", false
+	}
+	if !JWTTokenIsValid(jwtToken) {
+		slog.Debug("token is expired or invalid", "method", "LoadAccessToken")
+		return "", false
+	}
+	slog.Debug("local access token loaded", "method", "LoadAccessToken")
+	return t, true
+}
+
+func (h *AuthHandler) readAccessTokenFromFile() (string, error) {
+	// load a local access token
+	slog.Debug("reading local access token from file", "method", "readAccessTokenFromFile")
+	t, err := os.ReadFile(h.ConfigDir + "/token")
+	if err != nil {
+		slog.Debug("error reading local access token from file", "method", "readAccessTokenFromFile")
+		return "", err
+	}
+	slog.Debug("local access token read from file", "method", "readAccessTokenFromFile")
+	return string(t), nil
+}
+
+func (h *AuthHandler) SaveAccessToken(token string) error {
+	// save the token to a file
+	slog.Debug("saving access token", "method", "SaveAccessToken")
+	err := os.WriteFile(h.ConfigDir+"/token", []byte(token), 0600)
+	if err != nil {
+		slog.Debug("error saving access token", "method", "SaveAccessToken")
+		return err
+	}
+	slog.Debug("access token saved", "method", "SaveAccessToken")
 	return nil
 }

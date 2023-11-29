@@ -20,17 +20,25 @@ var LoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Login to HPCAdmin",
 	Run: func(cmd *cobra.Command, args []string) {
+		var accessToken string
 		azureAuthOptions := auth.AzureAuthHandlerOptions{
 			TenantID:  AZURE_TENANT_ID,
 			ClientID:  AZURE_CLIENT_ID,
 			ConfigDir: configDir,
 		}
-		ah := auth.NewAuthHandler(azureAuthOptions)
 
-		err = ah.Authenticate()
-		if err != nil {
-			util.ErrorPrint(fmt.Sprintf("Error authenticating: %v\n", err))
-			os.Exit(1)
+		ah := auth.NewAuthHandler(azureAuthOptions)
+		accessToken, ok := ah.LoadAccessToken()
+		if !ok {
+			accessToken, err = ah.Authenticate()
+			if err != nil {
+				util.ErrorPrint(fmt.Sprintf("Error authenticating: %v\n", err))
+				os.Exit(1)
+			}
+			ah.SaveAccessToken(accessToken)
 		}
+
+		// token can be accessed
+		fmt.Printf("token: %v\n", accessToken)
 	},
 }
