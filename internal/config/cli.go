@@ -16,7 +16,7 @@ type CliOptions struct {
 	ConfigDir string
 }
 
-func EnsureConfigDir() (string, error) {
+func EnsureCLIConfigDir() (string, error) {
 	slog.Debug("ensuring config directory", "method", "EnsureConfigDir")
 	var dir string
 	usr, err := user.Current()

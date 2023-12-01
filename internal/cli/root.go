@@ -22,7 +22,7 @@ var (
 			util.ConfigureLogging(debug)
 			slog.Debug("Starting hpcadmin-cli", "method", "Execute")
 
-			configDir, err = config.EnsureConfigDir()
+			configDir, err = config.EnsureCLIConfigDir()
 			if err != nil {
 				util.PrintAndExit(fmt.Sprintf("Error reading configuration directory: %v\n", err), 1)
 			}

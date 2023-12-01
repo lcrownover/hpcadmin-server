@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"log/slog"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 func PrintAndExit(msg string, code int) {

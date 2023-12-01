@@ -5,8 +5,8 @@ endif
 
 POSTGRES_HOST ?= localhost
 POSTGRES_PORT ?= 5432
-POSTGRES_USERNAME ?= postgres
-POSTGRES_PASSWORD ?= postgres
+POSTGRES_USERNAME ?= hpcadmin
+POSTGRES_PASSWORD ?= superfancytestpasswordthatnobodyknows&
 POSTGRES_DATABASE ?= hpcadmin_test
 
 all: build

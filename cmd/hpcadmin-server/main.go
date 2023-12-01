@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -13,26 +14,33 @@ import (
 	"github.com/go-chi/docgen"
 	"github.com/go-chi/render"
 
-	keys "github.com/lcrownover/hpcadmin-server/internal"
 	"github.com/lcrownover/hpcadmin-server/internal/api"
+	"github.com/lcrownover/hpcadmin-server/internal/auth"
 	"github.com/lcrownover/hpcadmin-server/internal/data"
+	"github.com/lcrownover/hpcadmin-server/internal/keys"
+	"github.com/lcrownover/hpcadmin-server/internal/util"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var docs = flag.String("docs", "", "Generate router documentation")
+var debug = flag.Bool("debug", false, "Enable debug mode")
 
 func main() {
 	var err error
 
 	flag.Parse()
 
+	util.ConfigureLogging(*debug)
+
+	slog.Debug("Starting hpcadmin-server", "method", "main")
+
 	// TODO(lcrown): This should be read from env, or config file
 	dbRequest := data.DBRequest{
 		Host:       "localhost",
 		Port:       5432,
-		User:       "postgres",
-		Password:   "postgres",
+		User:       "hpcadmin",
+		Password:   "superfancytestpasswordthatnobodyknows&",
 		DBName:     "hpcadmin_test",
 		DisableSSL: true,
 	}
@@ -53,9 +61,12 @@ func main() {
 	}
 	listenAddr := fmt.Sprintf("%s:%s", host, port)
 
+	authCache := auth.NewAuthCache()
+
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, keys.DBConnKey, dbConn)
 	ctx = context.WithValue(ctx, keys.ListenAddrKey, listenAddr)
+	ctx = context.WithValue(ctx, keys.AuthCacheKey, authCache)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -64,16 +75,29 @@ func main() {
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
-	r.Mount("/oauth", api.OauthRouter(ctx))
+	// public routes for logging in and simple homepage
+	r.Group(func(r chi.Router) {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+		r.Mount("/oauth", api.OauthRouter(ctx))
+	})
 
-	r.Mount("/admin", api.AdminRouter())
+	// private routes for authenticated users
+	r.Group(func(r chi.Router) {
+		r.Use(api.AuthVerifier)
+		r.Mount("/api/v1", func(ctx context.Context) http.Handler {
+			r := chi.NewRouter()
+			r.Mount("/users", api.UsersRouter(ctx))
+			r.Mount("/pirgs", api.PirgsRouter(ctx))
+			return r
+		}(ctx))
+	})
 
-	r.Mount("/api/v1", func(ctx context.Context) http.Handler {
-		r := chi.NewRouter()
-		r.Mount("/users", api.UsersRouter(ctx))
-		r.Mount("/pirgs", api.PirgsRouter(ctx))
-		return r
-	}(ctx))
+	// admin routes for authenticated admins
+	r.Group(func(r chi.Router) {
+		r.Use(api.AuthVerifier)
+		r.Use(api.AdminOnly)
+		r.Mount("/admin", api.AdminRouter())
+	})
 
 	if *docs != "" {
 		api.GenerateDocs(r, *docs)

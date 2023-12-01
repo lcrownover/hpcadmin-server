@@ -9,16 +9,22 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lcrownover/hpcadmin-server/internal/auth"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
 )
 
+var ac *auth.AuthCache
+
+func init() {
+	ac = auth.NewAuthCache()
+}
+
 type OauthHandler struct {
 	dbConn       *sql.DB
 	oauth2Config *oauth2.Config
 	tokenCh      chan string
-	tokenCtx     *context.Context
 	tokenTimeout time.Duration
 }
 
@@ -53,34 +59,6 @@ func newOauthHandler(ctx context.Context) *OauthHandler {
 	}
 }
 
-	// http.HandleFunc("/private", func(w http.ResponseWriter, r *http.Request) {
-	// 	authHeader := r.Header.Get("Authorization")
-	// 	if authHeader == "" {
-	// 		w.WriteHeader(http.StatusUnauthorized)
-	// 		w.Write([]byte("Unauthorized"))
-	// 		return
-	// 	}
-	// 	tokenString := authHeader[len("Bearer "):]
-	// 	token, err := auth.GetJWTFromToken(r.Context(), tokenString)
-	// 	if err != nil {
-	// 		log.Println(err.Error())
-	// 		w.WriteHeader(http.StatusUnauthorized)
-	// 		w.Write([]byte("Unauthorized"))
-	// 		return
-	// 	}
-	// 	if !auth.TokenValid(token) {
-	// 		log.Println("Token is invalid")
-	// 		w.WriteHeader(http.StatusUnauthorized)
-	// 		w.Write([]byte("Unauthorized"))
-	// 		return
-	// 	}
-	// 	if auth.CheckAdmin(r.Context(), token) {
-	// 		log.Println("User is an admin")	
-	// 	}
-	// 	w.Write([]byte("Welcome agent."))
-	// })
-
-
 func OauthRouter(ctx context.Context) http.Handler {
 	r := chi.NewRouter()
 	h := newOauthHandler(ctx)
@@ -92,8 +70,6 @@ func OauthRouter(ctx context.Context) http.Handler {
 
 func (h *OauthHandler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	url := h.oauth2Config.AuthCodeURL("", oauth2.AccessTypeOffline)
-	// browser.OpenURL(url)
-	// redirect to url
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
@@ -111,20 +87,41 @@ func (h *OauthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accessToken := token.AccessToken
+
 	respHTML := `
-	<html>
-		<head>
-			<title>Auth Callback</title>
-		</head>
-		<body>
-			<h1>Auth Callback</h1>
-			<p>You have been logged in successfully. You can now close this browser tab.</p>
-		</body>
-	</html>
+<h1>Authentication Success</h1>
+<p>You are authenticated and can now return to the CLI.</p>
 	`
 	w.Header().Set("Content-Type", "text/html")
 	w.Header().Set("token", accessToken)
 	fmt.Fprint(w, respHTML)
+}
+
+// AuthVerifier middleware ensures that a JWT token was passed and it's a valid token.
+func AuthVerifier(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bearerString := r.Header.Get("Authorization")
+		if bearerString == "" {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		tokenString := bearerString[len("Bearer "):]
+		jwtToken, isValid, err := ac.TokenIsValid(tokenString)
+		if err != nil || !isValid {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
+		role := auth.GetJWTRoleFromToken(jwtToken)
+		ctx = context.WithValue(ctx, keys.RoleKey, role)
+		fmt.Printf("%v\n", ctx)
+		fmt.Println(role)
+		if !(role == "admin") {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // func (h *OauthHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {

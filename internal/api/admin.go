@@ -5,9 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lcrownover/hpcadmin-server/internal/keys"
 )
-
-type key string
 
 // A completely separate router for administrator routes
 func AdminRouter() chi.Router {
@@ -28,8 +27,8 @@ func AdminRouter() chi.Router {
 // AdminOnly middleware restricts access to just administrators.
 func AdminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isAdmin, ok := r.Context().Value("acl.admin").(bool)
-		if !ok || !isAdmin {
+		role, ok := r.Context().Value(keys.RoleKey).(string)
+		if !ok || !(role == "admin") {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}

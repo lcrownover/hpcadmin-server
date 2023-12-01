@@ -68,6 +68,7 @@ func GetJWTFromTokenString(token string) (*jwt.Token, error) {
 			return nil, fmt.Errorf("could not parse pubkey")
 		}
 
+		slog.Debug("returning public key", "method", "GetJWTFromToken")
 		return publickey, nil
 	})
 
@@ -77,4 +78,19 @@ func GetJWTFromTokenString(token string) (*jwt.Token, error) {
 	}
 
 	return tokenData, nil
+}
+
+func GetJWTRoleFromToken(token *jwt.Token) string {
+	slog.Debug("getting role from token", "method", "GetJWTRoleFromToken")
+	role := token.Claims.(jwt.MapClaims)["roles"].([]interface{})[0].(string)
+	slog.Debug(fmt.Sprintf("role value: %v", role), "method", "GetJWTRoleFromToken")
+	switch role {
+	case "Role.Admin":
+		role = "admin"
+	case "Role.User":
+		role = "user"
+	default:
+		role = "unknown"
+	}
+	return role
 }

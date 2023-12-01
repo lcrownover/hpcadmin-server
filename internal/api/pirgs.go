@@ -10,8 +10,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	keys "github.com/lcrownover/hpcadmin-server/internal"
 	"github.com/lcrownover/hpcadmin-server/internal/data"
+	"github.com/lcrownover/hpcadmin-server/internal/keys"
 )
 
 type PirgResponse struct {

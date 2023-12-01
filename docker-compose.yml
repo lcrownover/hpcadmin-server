@@ -5,8 +5,8 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=hpcadmin
+      - POSTGRES_PASSWORD=superfancytestpasswordthatnobodyknows&
       - POSTGRES_DB=hpcadmin_test
     ports:
       - '5432:5432'
