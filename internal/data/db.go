@@ -3,8 +3,6 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"strconv"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -19,25 +17,6 @@ type DBRequest struct {
 }
 
 func NewDBRequest(host string, port int, user, password, dbname string, disableSSL bool) (DBRequest, error) {
-	if envHost := os.Getenv("POSTGRES_HOST"); envHost != "" {
-		host = envHost
-	}
-	if envPort := os.Getenv("POSTGRES_PORT"); envPort != "" {
-		envPort, err := strconv.Atoi(envPort)
-		if err != nil {
-			return DBRequest{}, fmt.Errorf("failed to convert POSTGRES_PORT to int: %v", err.Error())
-		}
-		port = envPort
-	}
-	if envUser := os.Getenv("POSTGRES_USER"); envUser != "" {
-		user = envUser
-	}
-	if envPassword := os.Getenv("POSTGRES_PASSWORD"); envPassword != "" {
-		password = envPassword
-	}
-	if envDBName := os.Getenv("POSTGRES_DATABASE"); envDBName != "" {
-		dbname = envDBName
-	}
 	return DBRequest{
 		Host:       host,
 		Port:       port,

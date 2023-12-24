@@ -118,8 +118,6 @@ func AuthVerifier(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
 		role := oauth.GetJWTRoleFromToken(jwtToken)
 		ctx = context.WithValue(ctx, keys.RoleKey, role)
-		fmt.Printf("%v\n", ctx)
-		fmt.Println(role)
 		if role != "admin" {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return

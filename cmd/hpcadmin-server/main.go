@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/lcrownover/hpcadmin-server/internal/api"
 	"github.com/lcrownover/hpcadmin-server/internal/auth"
+	"github.com/lcrownover/hpcadmin-server/internal/config"
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"github.com/lcrownover/hpcadmin-server/internal/util"
@@ -24,42 +24,50 @@ import (
 )
 
 var docs = flag.String("docs", "", "Generate router documentation")
+var configPath = flag.String("config", "", "Path to hpcadmin-server configuration file")
 var debug = flag.Bool("debug", false, "Enable debug mode")
 
 func main() {
 	var err error
 
 	flag.Parse()
-
 	util.ConfigureLogging(*debug)
+
+	slog.Debug("Loading configuration from file", "method", "main")
+	cfg, err := config.LoadFile(*configPath)
+	if err != nil {
+		fmt.Printf("Error loading configuration from file: %v\n", err)
+		os.Exit(1)
+	}
+
+	slog.Debug("Searching environment variables for overrides", "method", "main")
+	cfg = config.LoadEnvironment(cfg)
+
+
+	slog.Debug("Validating Configuration", "method", "main")
+	err = config.Validate(cfg)
+	if err != nil {
+		fmt.Printf("Error validating configuration: %v\n", err)
+		os.Exit(1)
+	}
 
 	slog.Debug("Starting hpcadmin-server", "method", "main")
 
-	// TODO(lcrown): This should be read from env, or config file
 	dbRequest := data.DBRequest{
-		Host:       "localhost",
-		Port:       5432,
-		User:       "hpcadmin",
-		Password:   "superfancytestpasswordthatnobodyknows&",
-		DBName:     "hpcadmin_test",
+		Host:       cfg.DB.Host,
+		Port:       cfg.DB.Port,
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
+		DBName:     cfg.DB.DBName,
 		DisableSSL: true,
 	}
-
 	dbConn, err := data.NewDBConn(dbRequest)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Error connecting to database: %v\n", err)
+		os.Exit(1)
 	}
 
-	// TODO(lcrown): this should be in config file
-	host, found := os.LookupEnv("HOST")
-	if !found {
-		host = "localhost"
-	}
-	port, found := os.LookupEnv("PORT")
-	if !found {
-		port = "3333"
-	}
-	listenAddr := fmt.Sprintf("%s:%s", host, port)
+	listenAddr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 
 	authCache := auth.NewAuthCache()
 

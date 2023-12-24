@@ -11,6 +11,16 @@ POSTGRES_DATABASE ?= hpcadmin_test
 
 all: build
 
+install:
+	cp ./bin/hpcadmin-server /usr/local/bin/hpcadmin-server
+	mkdir -p /etc/hpcadmin-server
+	cp ./extras/config.yaml.template /etc/hpcadmin-server/config.yaml
+	
+clean:
+	rm -rf ./bin
+	rm -rf /etc/hpcadmin-server
+	rm -f /usr/local/bin/hpcadmin-server
+
 migrate:
 	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
 
