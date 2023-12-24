@@ -75,6 +75,7 @@ func main() {
 	ctx = context.WithValue(ctx, keys.DBConnKey, dbConn)
 	ctx = context.WithValue(ctx, keys.ListenAddrKey, listenAddr)
 	ctx = context.WithValue(ctx, keys.AuthCacheKey, authCache)
+	ctx = context.WithValue(ctx, keys.ConfigKey, cfg)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)

@@ -55,3 +55,12 @@ CREATE TABLE groups_users (
     FOREIGN KEY (group_id) REFERENCES pirgs_groups(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE api_keys (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    key TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

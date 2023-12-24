@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lcrownover/hpcadmin-lib/pkg/oauth"
 	"github.com/lcrownover/hpcadmin-server/internal/auth"
+	"github.com/lcrownover/hpcadmin-server/internal/config"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
@@ -31,21 +31,9 @@ type OauthHandler struct {
 
 func newOauthHandler(ctx context.Context) *OauthHandler {
 	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
-	tenantID, found := os.LookupEnv("TENANT_ID")
-	if !found {
-		fmt.Println("TENANT_ID not found")
-		os.Exit(1)
-	}
-	clientID, found := os.LookupEnv("CLIENT_ID")
-	if !found {
-		fmt.Println("CLIENT_ID not found")
-		os.Exit(1)
-	}
-	clientSecret, found := os.LookupEnv("CLIENT_SECRET")
-	if !found {
-		fmt.Println("CLIENT_SECRET not found")
-		os.Exit(1)
-	}
+	tenantID := ctx.Value(keys.ConfigKey).(*config.ServerConfig).Oauth.TenantID
+	clientID := ctx.Value(keys.ConfigKey).(*config.ServerConfig).Oauth.ClientID
+	clientSecret := ctx.Value(keys.ConfigKey).(*config.ServerConfig).Oauth.ClientSecret
 
 	var redirectURL = fmt.Sprintf("http://%s/oauth/callback", ctx.Value(keys.ListenAddrKey).(string))
 	var oauth2Config = &oauth2.Config{
@@ -104,8 +92,18 @@ func (h *OauthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 // AuthVerifier middleware ensures that a JWT token was passed and it's a valid token.
 func AuthVerifier(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO(lcrown): implement API Key auth
+		// apiKey := r.Header.Get("X-API-Key")
+		// if apiKey != "" {
+		// 	role, err := handleAPIKey(apiKey, w, r)
+
+		// }
 		bearerString := r.Header.Get("Authorization")
 		if bearerString == "" {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		if len(bearerString) < len("Bearer ") {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -125,6 +123,17 @@ func AuthVerifier(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+// TODO(lcrown): implement api key auth
+// func handleAPIKey(apiKey string, w http.ResponseWriter, r *http.Request) (string, error) {
+// 	role, err := ac.GetRoleFromAPIKey(apiKey)
+// 	if err != nil {
+// 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+// 		return "", err
+// 	}
+// 	ctx := context.WithValue(r.Context(), keys.RoleKey, role)
+// 	return role, nil
+// }
 
 // func (h *OauthHandler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
 // 	// just for testing, get the stuff from env vars

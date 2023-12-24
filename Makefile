@@ -7,7 +7,8 @@ POSTGRES_HOST ?= localhost
 POSTGRES_PORT ?= 5432
 POSTGRES_USERNAME ?= hpcadmin
 POSTGRES_PASSWORD ?= superfancytestpasswordthatnobodyknows&
-POSTGRES_DATABASE ?= hpcadmin_test
+POSTGRES_DATABASE ?= hpcadmin
+POSTGRES_TEST_DATABASE ?= hpcadmin_test
 
 all: build
 
@@ -17,9 +18,7 @@ install:
 	cp ./extras/config.yaml.template /etc/hpcadmin-server/config.yaml
 	
 clean:
-	rm -rf ./bin
-	rm -rf /etc/hpcadmin-server
-	rm -f /usr/local/bin/hpcadmin-server
+	rm -rf ./bin rm -rf /etc/hpcadmin-server rm -f /usr/local/bin/hpcadmin-server
 
 migrate:
 	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
@@ -44,5 +43,6 @@ compose-down:
 docs: build
 	./bin/hpcadmin-server -docs=markdown
 
-test: migrate
+test: build
+	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_TEST_DATABASE}?sslmode=disable" -verbose up
 	go test ./...

@@ -20,8 +20,9 @@ func newTestDataHandler() *testDataHandler {
 	dbr := data.DBRequest{
 		Host:       "localhost",
 		Port:       5432,
-		User:       "postgres",
-		Password:   "postgres",
+		User:       "hpcadmin",
+		Password:   "superfancytestpasswordthatnobodyknows&",
+		DBName:     "hpcadmin_test",
 		DisableSSL: true,
 	}
 	db, err := data.NewDBConn(dbr)

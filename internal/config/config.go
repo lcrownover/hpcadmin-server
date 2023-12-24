@@ -35,10 +35,17 @@ type DatabaseConfig struct {
 // file from /etc/hpcadmin-server/config.yaml
 func LoadFile(configPath string) (*ServerConfig, error) {
 	var err error
+	cfg := &ServerConfig{}
+	// If configPath wasn't provided, and the file doesn't exist, just return an empty config
 	if configPath == "" {
 		configPath = "/etc/hpcadmin-server/config.yaml"
 	}
 	slog.Debug("Configuration path found", "method", "Load", "path", configPath)
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		slog.Debug("Configuration file not found", "method", "Load", "path", configPath)
+		return cfg, nil
+	}
 
 	slog.Debug("Reading config file", "method", "Load", "path", configPath)
 	configData, err := os.ReadFile(configPath)
@@ -47,14 +54,12 @@ func LoadFile(configPath string) (*ServerConfig, error) {
 	}
 
 	slog.Debug("Parsing YAML", "method", "Load", "path", configPath)
-	cfg := &ServerConfig{}
 	err = yaml.Unmarshal(configData, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	return cfg, nil
-
 }
 
 func LoadEnvironment(cfg *ServerConfig) *ServerConfig {
