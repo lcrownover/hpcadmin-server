@@ -89,38 +89,34 @@ func (h *OauthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, respHTML)
 }
 
-// AuthVerifier middleware ensures that a JWT token was passed and it's a valid token.
-func AuthVerifier(next http.Handler) http.Handler {
+// OauthLoader middleware ensures that a JWT token was passed and it's a valid token.
+func OauthLoader(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO(lcrown): implement API Key auth
-		// apiKey := r.Header.Get("X-API-Key")
-		// if apiKey != "" {
-		// 	role, err := handleAPIKey(apiKey, w, r)
-
-		// }
 		bearerString := r.Header.Get("Authorization")
 		if bearerString == "" {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
+			// bearer token wasn't passed
+			// so we wont load a role or anything
+			next.ServeHTTP(w, r)
+		} else {
+			if len(bearerString) < len("Bearer ") {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+			tokenString := bearerString[len("Bearer "):]
+			jwtToken, isValid, err := ac.TokenIsValid(tokenString)
+			if err != nil || !isValid {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+			ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
+			role := oauth.GetJWTRoleFromToken(jwtToken)
+			ctx = context.WithValue(ctx, keys.RoleKey, role)
+			if role != "admin" {
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-		if len(bearerString) < len("Bearer ") {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		tokenString := bearerString[len("Bearer "):]
-		jwtToken, isValid, err := ac.TokenIsValid(tokenString)
-		if err != nil || !isValid {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
-		role := oauth.GetJWTRoleFromToken(jwtToken)
-		ctx = context.WithValue(ctx, keys.RoleKey, role)
-		if role != "admin" {
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

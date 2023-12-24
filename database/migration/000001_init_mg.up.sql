@@ -57,9 +57,8 @@ CREATE TABLE groups_users (
 );
 
 CREATE TABLE api_keys (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
-    key TEXT NOT NULL,
+    key TEXT PRIMARY KEY,
+	role TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id)

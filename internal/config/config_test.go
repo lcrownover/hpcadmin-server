@@ -8,7 +8,7 @@ import (
 func TestLoadFile(t *testing.T) {
 	// Test case 1: Test with valid config path
 	t.Run("ValidConfigPath", func(t *testing.T) {
-		configPath := "tests/testconfig.yaml"
+		configPath := "tests/data/testconfig.yaml"
 		expectedConfig := &ServerConfig{
 			Host: "localhost",
 			Port: 3333,

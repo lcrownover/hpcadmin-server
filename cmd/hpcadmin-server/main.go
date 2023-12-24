@@ -93,7 +93,9 @@ func main() {
 
 	// private routes for authenticated users
 	r.Group(func(r chi.Router) {
-		r.Use(api.AuthVerifier)
+		r.Use(api.APIKeyLoader)
+		r.Use(api.OauthLoader)
+		r.Use(api.RoleVerifier)
 		r.Mount("/api/v1", func(ctx context.Context) http.Handler {
 			r := chi.NewRouter()
 			r.Mount("/users", api.UsersRouter(ctx))
@@ -104,7 +106,9 @@ func main() {
 
 	// admin routes for authenticated admins
 	r.Group(func(r chi.Router) {
-		r.Use(api.AuthVerifier)
+		r.Use(api.APIKeyLoader)
+		r.Use(api.OauthLoader)
+		r.Use(api.RoleVerifier)
 		r.Use(api.AdminOnly)
 		r.Mount("/admin", api.AdminRouter())
 	})

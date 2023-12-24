@@ -2,37 +2,13 @@ package api
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
-
-type testDataHandler struct {
-	db *sql.DB
-}
-
-func newTestDataHandler() *testDataHandler {
-	dbr := data.DBRequest{
-		Host:       "localhost",
-		Port:       5432,
-		User:       "hpcadmin",
-		Password:   "superfancytestpasswordthatnobodyknows&",
-		DBName:     "hpcadmin_test",
-		DisableSSL: true,
-	}
-	db, err := data.NewDBConn(dbr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &testDataHandler{
-		db: db,
-	}
-}
 
 func TestCreateUser(t *testing.T) {
 	th := newTestDataHandler()
