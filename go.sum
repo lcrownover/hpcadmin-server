@@ -31,8 +31,8 @@ github.com/hashicorp/errwrap v1.1.0 h1:OxrOeh75EUXMY8TBjag2fzXGZ40LB6IKw45YeGUDY
 github.com/hashicorp/errwrap v1.1.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
 github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+lD48awMYo=
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
-github.com/lcrownover/hpcadmin-lib v0.0.0-20231224014815-eaedc3b8fe8d h1:yZC/YvH/YcSzjNH5NeRNNbn3fuh2lbDYIYd4gXbWeQ4=
-github.com/lcrownover/hpcadmin-lib v0.0.0-20231224014815-eaedc3b8fe8d/go.mod h1:9Dj35HshodVRI/J1aCImmJXWXEeMv2qd6uD6HxMpj9Y=
+github.com/lcrownover/hpcadmin-lib v0.0.0-20231224015839-8fc3f0833e70 h1:sU4pJTuZhxS5HtBHxASjF9m/vlsxDW24RKvPmXjg9TY=
+github.com/lcrownover/hpcadmin-lib v0.0.0-20231224015839-8fc3f0833e70/go.mod h1:9Dj35HshodVRI/J1aCImmJXWXEeMv2qd6uD6HxMpj9Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.2 h1:Cg2gVSc9h7sz9NOByczrbUvLopQmXrfFx//N+AkAr5k=

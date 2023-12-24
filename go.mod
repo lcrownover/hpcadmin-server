@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/render v1.0.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.16.0
-	github.com/lcrownover/hpcadmin-lib v0.0.0-20231224014815-eaedc3b8fe8d
+	github.com/lcrownover/hpcadmin-lib v0.0.0-20231224015839-8fc3f0833e70
 	github.com/lib/pq v1.10.9
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/oauth2 v0.13.0
