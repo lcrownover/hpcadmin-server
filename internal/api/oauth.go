@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lcrownover/hpcadmin-lib/pkg/oauth"
 	"github.com/lcrownover/hpcadmin-server/internal/auth"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
@@ -32,15 +33,18 @@ func newOauthHandler(ctx context.Context) *OauthHandler {
 	dbConn := ctx.Value(keys.DBConnKey).(*sql.DB)
 	tenantID, found := os.LookupEnv("TENANT_ID")
 	if !found {
-		panic("TENANT_ID not found")
+		fmt.Println("TENANT_ID not found")
+		os.Exit(1)
 	}
 	clientID, found := os.LookupEnv("CLIENT_ID")
 	if !found {
-		panic("CLIENT_ID not found")
+		fmt.Println("CLIENT_ID not found")
+		os.Exit(1)
 	}
 	clientSecret, found := os.LookupEnv("CLIENT_SECRET")
 	if !found {
-		panic("CLIENT_SECRET not found")
+		fmt.Println("CLIENT_SECRET not found")
+		os.Exit(1)
 	}
 
 	var redirectURL = fmt.Sprintf("http://%s/oauth/callback", ctx.Value(keys.ListenAddrKey).(string))
@@ -112,7 +116,7 @@ func AuthVerifier(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
-		role := auth.GetJWTRoleFromToken(jwtToken)
+		role := oauth.GetJWTRoleFromToken(jwtToken)
 		ctx = context.WithValue(ctx, keys.RoleKey, role)
 		fmt.Printf("%v\n", ctx)
 		fmt.Println(role)

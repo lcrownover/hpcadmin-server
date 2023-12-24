@@ -100,6 +100,7 @@ func newUserHandler(ctx context.Context) *UserHandler {
 
 // GetAllUsers returns all existing users
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	var users []*data.User
 
 	users, err := data.GetAllUsers(h.dbConn)
@@ -108,7 +109,8 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := render.RenderList(w, r, newUserResponseList(users)); err != nil {
+	resp.Results = newUserResponseList(users)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -116,9 +118,11 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 // GetUserById returns a single user by id, but is not currently used
 func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	user := r.Context().Value(keys.UserKey).(*data.User)
 
-	if err := render.Render(w, r, newUserResponse(user)); err != nil {
+	resp.Results = newUserResponse(user)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -126,6 +130,7 @@ func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser creates a new user
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	userReq := &UserRequest{}
 	if err := render.Bind(r, userReq); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -140,8 +145,9 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp.Results = newUserResponse(newUser)
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, newUserResponse(newUser))
+	render.Render(w, r, resp)
 }
 
 // UserCtx middleware is used to load a User object from /users/{username} requests
@@ -171,14 +177,17 @@ func (h *UserHandler) UserCtx(next http.Handler) http.Handler {
 
 // GetUser returns the user in the request context
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	user := r.Context().Value(keys.UserKey).(*data.User)
-	if err := render.Render(w, r, newUserResponse(user)); err != nil {
+	resp.Results = newUserResponse(user)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 	}
 }
 
 // UpdateUser updates a user
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	user := r.Context().Value(keys.UserKey).(*data.User)
 	userReq := newUserRequest(user)
 	if err := render.Bind(r, userReq); err != nil {
@@ -197,8 +206,9 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp.Results = newUserResponse(updatedUser)
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, newUserResponse(updatedUser))
+	render.Render(w, r, resp)
 }
 
 // DeleteUser deletes a user

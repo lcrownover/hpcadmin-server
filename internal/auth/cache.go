@@ -39,12 +39,12 @@ func (a *AuthCache) TokenIsValid(token string) (*jwt.Token, bool, error) {
 
 	// otherwise, check if the token is valid and return it
 	slog.Debug("token is not in cache, parsing token", "method", "TokenIsValid")
-	jwtToken, err := auth.GetJWTFromTokenString(token)
+	jwtToken, err := oauth.GetJWTFromTokenString(token)
 	if err != nil {
 		return nil, false, err
 	}
 	slog.Debug("token parsed, checking if token is valid", "method", "TokenIsValid")
-	isValid := auth.JWTTokenIsValid(jwtToken)
+	isValid := oauth.JWTTokenIsValid(jwtToken)
 	if !isValid {
 		slog.Debug("token is not valid, failing authentication", "method", "TokenIsValid")
 		return nil, false, nil

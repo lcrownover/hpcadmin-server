@@ -78,6 +78,7 @@ func main() {
 	// public routes for logging in and simple homepage
 	r.Group(func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
+		r.Mount("/login", api.LoginRouter(ctx)) // TODO(lcrown)
 		r.Mount("/oauth", api.OauthRouter(ctx))
 	})
 

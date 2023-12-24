@@ -108,6 +108,7 @@ func newPirgHandler(ctx context.Context) *PirgHandler {
 
 // GetAllPirgs returns all existing Pirgs
 func (h *PirgHandler) GetAllPirgs(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	var pirgs []*data.Pirg
 
 	pirgs, err := data.GetAllPirgs(h.dbConn)
@@ -116,7 +117,8 @@ func (h *PirgHandler) GetAllPirgs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := render.RenderList(w, r, newPirgResponseList(pirgs)); err != nil {
+	resp.Results = newPirgResponseList(pirgs)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -124,9 +126,11 @@ func (h *PirgHandler) GetAllPirgs(w http.ResponseWriter, r *http.Request) {
 
 // GetPirgById returns a single Pirg by id, but is not currently used
 func (h *PirgHandler) GetPirgById(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	pirg := r.Context().Value(keys.PirgKey).(*data.Pirg)
 
-	if err := render.Render(w, r, newPirgResponse(pirg)); err != nil {
+	resp.Results = newPirgResponse(pirg)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -134,6 +138,7 @@ func (h *PirgHandler) GetPirgById(w http.ResponseWriter, r *http.Request) {
 
 // CreatePirg creates a new Pirg
 func (h *PirgHandler) CreatePirg(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	pirg := &PirgRequest{}
 	if err := render.Bind(r, pirg); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -148,8 +153,9 @@ func (h *PirgHandler) CreatePirg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp.Results = newPirgResponse(newPirg)
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, newPirgResponse(newPirg))
+	render.Render(w, r, resp)
 }
 
 // PirgCtx middleware is used to load a Pirg object from /Pirgs/{Pirgname} requests
@@ -179,14 +185,17 @@ func (h *PirgHandler) PirgCtx(next http.Handler) http.Handler {
 
 // GetPirg returns the Pirg in the request context
 func (h *PirgHandler) GetPirg(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	pirg := r.Context().Value(keys.PirgKey).(*data.Pirg)
-	if err := render.Render(w, r, newPirgResponse(pirg)); err != nil {
+	resp.Results = newPirgResponse(pirg)
+	if err := render.Render(w, r, resp); err != nil {
 		render.Render(w, r, ErrRender(err))
 	}
 }
 
 // UpdatePirg updates a Pirg
 func (h *PirgHandler) UpdatePirg(w http.ResponseWriter, r *http.Request) {
+	resp := &ApiResponse{}
 	pirg := r.Context().Value(keys.PirgKey).(*data.Pirg)
 	pirgReq := newPirgRequest(pirg)
 	if err := render.Bind(r, pirgReq); err != nil {
@@ -200,8 +209,9 @@ func (h *PirgHandler) UpdatePirg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp.Results = newPirgResponse(updatedPirg)
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, newPirgResponse(updatedPirg))
+	render.Render(w, r, resp)
 }
 
 // DeletePirg deletes a Pirg
