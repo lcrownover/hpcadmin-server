@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/lcrownover/hpcadmin-lib/pkg/auth"
+	"github.com/lcrownover/hpcadmin-lib/pkg/oauth"
 )
 
 // AuthCache is the cache for the auth service
