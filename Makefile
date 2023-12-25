@@ -18,7 +18,9 @@ install:
 	cp ./extras/config.yaml.template /etc/hpcadmin-server/config.yaml
 	
 clean:
-	rm -rf ./bin rm -rf /etc/hpcadmin-server rm -f /usr/local/bin/hpcadmin-server
+	rm -rf ./bin
+	rm -rf /etc/hpcadmin-server 
+	rm -f /usr/local/bin/hpcadmin-server
 
 migrate:
 	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
@@ -43,6 +45,14 @@ compose-down:
 docs: build
 	./bin/hpcadmin-server -docs=markdown
 
+testdb_setup:
+	bash ./test/scripts/testDatabaseSetup.sh
+
+testdb_teardown:
+	bash ./test/scripts/testDatabaseTeardown.sh
+
 test: build
-	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_TEST_DATABASE}?sslmode=disable" -verbose up
+	bash ./test/scripts/testDatabaseSetup.sh
 	go test ./...
+	bash ./test/scripts/testDatabaseTeardown.sh
+

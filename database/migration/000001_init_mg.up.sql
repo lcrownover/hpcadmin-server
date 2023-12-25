@@ -59,6 +59,7 @@ CREATE TABLE groups_users (
 CREATE TABLE api_keys (
     key TEXT PRIMARY KEY,
 	role TEXT NOT NULL,
+	user_id INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id)

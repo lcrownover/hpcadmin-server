@@ -1,4 +1,4 @@
-package api
+package auth
 
 import (
 	"context"
@@ -9,17 +9,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/lcrownover/hpcadmin-lib/pkg/oauth"
-	"github.com/lcrownover/hpcadmin-server/internal/auth"
 	"github.com/lcrownover/hpcadmin-server/internal/config"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
 )
 
-var ac *auth.AuthCache
+var ac *AuthCache
 
 func init() {
-	ac = auth.NewAuthCache()
+	ac = NewAuthCache()
 }
 
 type OauthHandler struct {
@@ -90,33 +89,35 @@ func (h *OauthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 }
 
 // OauthLoader middleware ensures that a JWT token was passed and it's a valid token.
-func OauthLoader(next http.Handler) http.Handler {
+func (m *Middleware) OauthLoader(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bearerString := r.Header.Get("Authorization")
 		if bearerString == "" {
 			// bearer token wasn't passed
 			// so we wont load a role or anything
 			next.ServeHTTP(w, r)
-		} else {
-			if len(bearerString) < len("Bearer ") {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
-			}
-			tokenString := bearerString[len("Bearer "):]
-			jwtToken, isValid, err := ac.TokenIsValid(tokenString)
-			if err != nil || !isValid {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
-			}
-			ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
-			role := oauth.GetJWTRoleFromToken(jwtToken)
-			ctx = context.WithValue(ctx, keys.RoleKey, role)
-			if role != "admin" {
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-				return
-			}
-			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
+		// authorization header is set, validate header value
+		if len(bearerString) < len("Bearer ") {
+			// bearer string doesn't contain "Bearer "
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		tokenString := bearerString[len("Bearer "):]
+		jwtToken, isValid, err := ac.TokenIsValid(tokenString)
+		if err != nil || !isValid {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
+		role := oauth.GetJWTRoleFromToken(jwtToken)
+		ctx = context.WithValue(ctx, keys.RoleKey, role)
+		if role != "admin" {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

@@ -43,7 +43,6 @@ func main() {
 	slog.Debug("Searching environment variables for overrides", "method", "main")
 	cfg = config.LoadEnvironment(cfg)
 
-
 	slog.Debug("Validating Configuration", "method", "main")
 	err = config.Validate(cfg)
 	if err != nil {
@@ -70,6 +69,7 @@ func main() {
 	listenAddr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 
 	authCache := auth.NewAuthCache()
+	mw := auth.NewMiddleware(dbConn)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, keys.DBConnKey, dbConn)
@@ -87,15 +87,15 @@ func main() {
 	// public routes for logging in and simple homepage
 	r.Group(func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {})
-		r.Mount("/login", api.LoginRouter(ctx)) // TODO(lcrown)
-		r.Mount("/oauth", api.OauthRouter(ctx))
+		// r.Mount("/login", api.LoginRouter(ctx)) // TODO(lcrown)
+		r.Mount("/oauth", auth.OauthRouter(ctx))
 	})
 
 	// private routes for authenticated users
 	r.Group(func(r chi.Router) {
-		r.Use(api.APIKeyLoader)
-		r.Use(api.OauthLoader)
-		r.Use(api.RoleVerifier)
+		r.Use(mw.APIKeyLoader)
+		r.Use(mw.OauthLoader)
+		r.Use(mw.RoleVerifier)
 		r.Mount("/api/v1", func(ctx context.Context) http.Handler {
 			r := chi.NewRouter()
 			r.Mount("/users", api.UsersRouter(ctx))
@@ -106,11 +106,11 @@ func main() {
 
 	// admin routes for authenticated admins
 	r.Group(func(r chi.Router) {
-		r.Use(api.APIKeyLoader)
-		r.Use(api.OauthLoader)
-		r.Use(api.RoleVerifier)
-		r.Use(api.AdminOnly)
-		r.Mount("/admin", api.AdminRouter())
+		r.Use(mw.APIKeyLoader)
+		r.Use(mw.OauthLoader)
+		r.Use(mw.RoleVerifier)
+		r.Use(mw.AdminOnly)
+		r.Mount("/admin", api.AdminRouter(ctx))
 	})
 
 	if *docs != "" {
