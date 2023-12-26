@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 	"github.com/lcrownover/hpcadmin-lib/pkg/oauth"
+	"github.com/lcrownover/hpcadmin-server/internal/api"
 	"github.com/lcrownover/hpcadmin-server/internal/config"
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
 	"golang.org/x/oauth2"
@@ -26,6 +28,8 @@ type OauthHandler struct {
 	oauth2Config *oauth2.Config
 	tokenCh      chan string
 	tokenTimeout time.Duration
+	tenantID     string
+	clientID     string
 }
 
 func newOauthHandler(ctx context.Context) *OauthHandler {
@@ -47,6 +51,8 @@ func newOauthHandler(ctx context.Context) *OauthHandler {
 		oauth2Config: oauth2Config,
 		tokenCh:      make(chan string, 1),
 		tokenTimeout: 5 * time.Minute,
+		tenantID:     tenantID,
+		clientID:     clientID,
 	}
 }
 
@@ -56,6 +62,7 @@ func OauthRouter(ctx context.Context) http.Handler {
 	r.Get("/", h.Authenticate)
 	r.Get("/url", h.GetAuthURL)
 	r.Get("/callback", h.Callback)
+	r.Get("/info", h.Info)
 	return r
 }
 
@@ -119,6 +126,24 @@ func (m *Middleware) OauthLoader(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+type InfoResponse struct {
+	TenantID string `json:"tenant_id"`
+	ClientID string `json:"client_id"`
+}
+
+func (i *InfoResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+func (h *OauthHandler) Info(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	resp := &InfoResponse{TenantID: h.tenantID, ClientID: h.clientID}
+
+	if err := render.Render(w, r, resp); err != nil {
+		render.Render(w, r, api.ErrRender(err))
+	}
 }
 
 // TODO(lcrown): implement api key auth
