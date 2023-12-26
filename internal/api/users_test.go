@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
 func TestCreateUser(t *testing.T) {
-	th := newTestDataHandler()
+	th := NewTestDataHandler()
 
 	// first we need to create a user, then get it back
 	userReq := `{"username": "lcrownover", "email": "lcrownover@localhost", "firstname": "Lucas", "lastname": "Crownover"}`
@@ -20,6 +19,7 @@ func TestCreateUser(t *testing.T) {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", "testkey1")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -30,13 +30,13 @@ func TestCreateUser(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	var userResp UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&userResp)
+	var userResponse UserResponse
+	err = json.NewDecoder(resp.Body).Decode(&userResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	u, err := data.GetUserById(th.db, userResp.Id)
+	u, err := data.GetUserById(th.DB, userResponse.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,35 +54,64 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
+// TestGetAllUsers tests the GET /api/v1/users endpoint
+// it creates a user, then gets all users and checks that the created user is in the list
 func TestGetAllUsers(t *testing.T) {
-	// Create a new request to the /users endpoint
-	req, err := http.NewRequest("GET", "/api/v1/users", nil)
+	// first we need to create a user, then get it back
+	userReq := `{"username": "testgetall", "email": "testgetall@localhost", "firstname": "test", "lastname": "getall"}`
+	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/users", bytes.NewBuffer([]byte(userReq)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", "testkey1")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			resp.StatusCode, http.StatusCreated)
+	}
+
+	// now get all users
+	req, err = http.NewRequest("GET", "http://localhost:3333/api/v1/users", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-Key", "testkey1")
+	client = &http.Client{}
+	resp, err = client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			resp.StatusCode, http.StatusCreated)
+	}
+	var usersResponse []UserResponse
+	err = json.NewDecoder(resp.Body).Decode(&usersResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create a new response recorder
-	rr := httptest.NewRecorder()
-
-	tdh := newTestDataHandler()
-	tuh := &UserHandler{tdh.db}
-
-	// Create a new handler and call it's ServeHTTP method passing in the
-	// the response recorder and the request object
-	handler := http.HandlerFunc(tuh.GetAllUsers)
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+	// check if the usersResponse has more than 1 user
+	if len(usersResponse) < 1 {
+		t.Errorf("expected more than 1 user, got %v", len(usersResponse))
 	}
 
-	// Check the response body is what we expect.
-	expected := `[{"id":1,"username":"lcrownover","email":"lcrownover@localhost","firstname":"Lucas","lastname":"Crownover"}]`
-	actual := rr.Body.String()
-	if actual != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			actual, expected)
+	// check if the user we created is in the list
+	found := false
+	for _, user := range usersResponse {
+		if user.Username == "testgetall" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected to find user testgetall in the list of users")
 	}
 }

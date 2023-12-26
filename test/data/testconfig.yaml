@@ -4,3 +4,10 @@ port: 3333
 database:
   host: localhost
   port: 5432
+  user: hpcadmin
+  password: "superfancytestpasswordthatnobodyknows&"
+  dbname: hpcadmin_test
+oauth:
+  tenant_id: mock
+  client_id: mock
+  client_secret: mock

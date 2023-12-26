@@ -14,8 +14,8 @@ docker run \
 	-e POSTGRES_DB="$POSTGRES_DATABASE" \
 	-p $POSTGRES_PORT:$POSTGRES_PORT \
 	-d \
-	postgres:latest
+	postgres:latest >/dev/null
 
 sleep 2
 
-migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
+migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" up >/dev/null 2>&1

@@ -5,11 +5,8 @@ import (
 )
 
 func TestCreatePirg(t *testing.T) {
-	dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-	db, err := NewDBConn(dbr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
 	ur := UserRequest{
 		Username:  "testcreatepirguser",
@@ -40,11 +37,8 @@ func TestCreatePirg(t *testing.T) {
 }
 
 func TestGetAllPirgs(t *testing.T) {
-	dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-	db, err := NewDBConn(dbr)
-	if err != nil {
-		t.Fatal(err)
-	}
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
 	ur := UserRequest{
 		Username:  "testgetallpirgsuser",

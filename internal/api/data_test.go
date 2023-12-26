@@ -1,10 +1,12 @@
-package data
+package api
 
 import (
 	"database/sql"
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
 type testDataHandler struct {
@@ -36,7 +38,7 @@ func NewTestDataHandler() *testDataHandler {
 	if !found {
 		panic("HPCADMIN_TEST_DATABASE_NAME not set")
 	}
-	dbr := DBRequest{
+	dbr := data.DBRequest{
 		Host:       host,
 		Port:       port,
 		User:       user,
@@ -44,7 +46,7 @@ func NewTestDataHandler() *testDataHandler {
 		DBName:     dbname,
 		DisableSSL: true,
 	}
-	db, err := NewDBConn(dbr)
+	db, err := data.NewDBConn(dbr)
 	if err != nil {
 		log.Fatal(err)
 	}

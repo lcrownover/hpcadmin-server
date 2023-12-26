@@ -6,11 +6,8 @@ import (
 )
 
 func TestGetUserById(t *testing.T) { 
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-    db, err := NewDBConn(dbr)
-    if err != nil {
-        t.Fatal(err)
-    }
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
     ur := UserRequest{
         Username: "testgetuserbyid",
@@ -38,11 +35,8 @@ func TestGetUserById(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) { 
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-    db, err := NewDBConn(dbr)
-    if err != nil {
-        t.Fatal(err)
-    }
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
     ur := UserRequest{
         Username: "testcreateuser",
@@ -72,11 +66,8 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-    db, err := NewDBConn(dbr)
-    if err != nil {
-        t.Fatal(err)
-    }
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
     ur := UserRequest{
         Username: "testupdateuser",
@@ -117,11 +108,8 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-    db, err := NewDBConn(dbr)
-    if err != nil {
-        t.Fatal(err)
-    }
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
     ur := UserRequest{
         Username: "testdeleteuser",
@@ -144,11 +132,8 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-    dbr, _ := NewDBRequest("localhost", 5432, "postgres", "postgres", "hpcadmin_test", true)
-    db, err := NewDBConn(dbr)
-    if err != nil {
-        t.Fatal(err)
-    }
+	dh := NewTestDataHandler()
+	db := dh.DB
 	defer db.Close()
     ur1 := UserRequest{
 		Username:  "testgetallusers",
@@ -156,7 +141,7 @@ func TestGetAllUsers(t *testing.T) {
 		FirstName: "Test",
 		LastName:  "User",
 	}
-    _, err = CreateUser(db, &ur1)
+	_, err := CreateUser(db, &ur1)
     if err != nil {
         t.Fatal(err)
     }

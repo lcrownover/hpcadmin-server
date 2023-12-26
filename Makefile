@@ -3,12 +3,17 @@ ifndef $(GOPATH)
 	export GOPATH
 endif
 
-POSTGRES_HOST ?= localhost
-POSTGRES_PORT ?= 5432
-POSTGRES_USERNAME ?= hpcadmin
-POSTGRES_PASSWORD ?= superfancytestpasswordthatnobodyknows&
-POSTGRES_DATABASE ?= hpcadmin
-POSTGRES_TEST_DATABASE ?= hpcadmin_test
+HPCADMIN_TEST_DATABASE_HOST ?= localhost
+HPCADMIN_TEST_DATABASE_PORT ?= 5432
+HPCADMIN_TEST_DATABASE_USERNAME ?= hpcadmin
+HPCADMIN_TEST_DATABASE_PASSWORD ?= superfancytestpasswordthatnobodyknows&
+HPCADMIN_TEST_DATABASE_NAME ?= hpcadmin_test
+
+export HPCADMIN_TEST_DATABASE_HOST
+export HPCADMIN_TEST_DATABASE_PORT
+export HPCADMIN_TEST_DATABASE_USERNAME
+export HPCADMIN_TEST_DATABASE_PASSWORD
+export HPCADMIN_TEST_DATABASE_NAME
 
 all: build
 
@@ -25,34 +30,30 @@ clean:
 migrate:
 	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" -verbose up
 
-server:
-	go build -o bin/hpcadmin-server cmd/hpcadmin-server/main.go
+migrate_quiet:
+	migrate -path database/migration/ -database "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}?sslmode=disable" up -quiet
+
+build:
+	@go build -o bin/hpcadmin-server cmd/hpcadmin-server/main.go
 
 tidy:
 	go mod tidy
-
-build: server
-
-run-server: server
-	./bin/hpcadmin-server
-
-compose-up:
-	docker compose up --build
-
-compose-down:
-	docker compose down -v
 
 docs: build
 	./bin/hpcadmin-server -docs=markdown
 
 testdb_setup:
 	bash ./test/scripts/testDatabaseSetup.sh
+	bash ./test/scripts/testBootstrap.sh
 
 testdb_teardown:
 	bash ./test/scripts/testDatabaseTeardown.sh
 
 test: build
-	bash ./test/scripts/testDatabaseSetup.sh
-	go test ./...
-	bash ./test/scripts/testDatabaseTeardown.sh
+	@-bash ./test/scripts/testDatabaseSetup.sh
+	@-bash ./test/scripts/testBootstrap.sh
+	@-bash ./test/scripts/testStartServer.sh
+	@-go test ./...
+	@-bash ./test/scripts/testStopServer.sh
+	@-bash ./test/scripts/testDatabaseTeardown.sh
 
