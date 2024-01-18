@@ -27,7 +27,7 @@ func TestCreateUser(t *testing.T) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v",
+		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
 	var userResponse UserResponse

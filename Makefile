@@ -53,7 +53,7 @@ test: build
 	@-bash ./test/scripts/testDatabaseSetup.sh
 	@-bash ./test/scripts/testBootstrap.sh
 	@-bash ./test/scripts/testStartServer.sh
-	@-go test ./...
+	@-go test -count=1 ./...
 	@-bash ./test/scripts/testStopServer.sh
 	@-bash ./test/scripts/testDatabaseTeardown.sh
 
