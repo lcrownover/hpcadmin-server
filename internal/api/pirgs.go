@@ -23,7 +23,7 @@ type PirgResponse struct {
 	AdminIds  []int     `json:"admin_ids"`
 	UserIds   []int     `json:"user_ids"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ModifiedAt time.Time `json:"modified_at"`
 }
 
 func (u *PirgResponse) Bind(r *http.Request) error {
@@ -42,7 +42,7 @@ func newPirgResponse(u *data.Pirg) *PirgResponse {
 		AdminIds:  u.AdminIds,
 		UserIds:   u.UserIds,
 		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		ModifiedAt: u.ModifiedAt,
 	}
 }
 
@@ -71,15 +71,15 @@ func (u *PirgRequest) Bind(r *http.Request) error {
 	}
 	// owner_id must be present in both admin_ids and user_ids
 	if !slices.Contains(u.AdminIds, u.OwnerId) {
-		return fmt.Errorf("owner_id %d must be present in admin_ids: %+v", u.OwnerId, u)
+		return fmt.Errorf("admin_ids must contain the id set for owner_id: %d", u.OwnerId)
 	}
 	if !slices.Contains(u.UserIds, u.OwnerId) {
-		return fmt.Errorf("owner_id %d must be present in user_ids: %+v", u.OwnerId, u)
+		return fmt.Errorf("user_ids must contain the id set for owner_id: %d", u.OwnerId)
 	}
 	// admin_ids must be a subset of user_ids
 	for _, adminId := range u.AdminIds {
 		if !slices.Contains(u.UserIds, adminId) {
-			return fmt.Errorf("admin_id %d must be a present in user_ids: %+v", adminId, u)
+			return fmt.Errorf("user_ids must contain all ids present in admin_ids. missing admin_id: %d", adminId)
 		}
 	}
 	// pirg name must be alphanumeric, lowercase, and start with a letter

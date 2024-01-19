@@ -22,7 +22,7 @@ type UserResponse struct {
 	FirstName string    `json:"firstname"`
 	LastName  string    `json:"lastname"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ModifiedAt time.Time `json:"modified_at"`
 }
 
 func (u *UserResponse) Bind(r *http.Request) error {

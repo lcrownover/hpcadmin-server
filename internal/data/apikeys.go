@@ -11,7 +11,7 @@ type APIKeyEntry struct {
 	Key       string
 	Role      string
 	CreatedAt time.Time
-	UpdatedAt time.Time
+	ModifiedAt time.Time
 }
 
 // GetAPIKeyEntry looks for the provided key in the database
@@ -19,7 +19,7 @@ type APIKeyEntry struct {
 func GetAPIKeyEntry(db *sql.DB, key string) (*APIKeyEntry, error) {
 	slog.Debug("querying database for api key", "package", "data", "method", "GetAPIKeyEntry")
 	var k APIKeyEntry
-	err := db.QueryRow("SELECT key, role, created_at, updated_at FROM api_keys WHERE key = $1", key).Scan(&k.Key, &k.Role, &k.CreatedAt, &k.UpdatedAt)
+	err := db.QueryRow("SELECT key, role, created_at, modified_at FROM api_keys WHERE key = $1", key).Scan(&k.Key, &k.Role, &k.CreatedAt, &k.ModifiedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			slog.Debug("api key not found in database", "package", "data", "method", "GetAPIKeyEntry")
