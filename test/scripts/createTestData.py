@@ -69,7 +69,6 @@ users = {
 for user in users:
     # try to get the user
     usersearchURL = 'http://localhost:3333/api/v1/users?username={}'.format(users[user]['username'])
-    print(usersearchURL)
     r = requests.get(usersearchURL, headers={'X-API-Key': TEST_API_KEY})
     print(r.text)
     if r.status_code == 200:

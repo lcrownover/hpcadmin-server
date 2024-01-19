@@ -69,6 +69,27 @@ func GetPirgById(db *sql.DB, id int) (*Pirg, error) {
 	return &pirg, err
 }
 
+func GetPirgByName(db *sql.DB, name string) (*Pirg, error) {
+	slog.Debug("querying database for pirg", "name", name, "package", "data", "method", "GetPirgByName")
+	var pirg Pirg
+	err := db.QueryRow("SELECT id, name, owner_id, created_at, modified_at FROM pirgs WHERE name = $1", name).Scan(&pirg.Id, &pirg.Name, &pirg.OwnerId, &pirg.CreatedAt, &pirg.ModifiedAt)
+	if err != nil {
+		slog.Error("failed to look up pirg from database", "package", "data", "method", "GetPirgByName", "error", err)
+		return nil, err
+	}
+	adminIds, err := getPirgAdminIds(db, pirg.Id)
+	if err != nil {
+		return nil, err
+	}
+	pirg.AdminIds = adminIds
+	userIds, err := getPirgUserIds(db, pirg.Id)
+	if err != nil {
+		return nil, err
+	}
+	pirg.UserIds = userIds
+	return &pirg, err
+}
+
 func getPirgAdminIds(db *sql.DB, id int) ([]int, error) {
 	slog.Debug("getting pirg admin ids from database", "package", "data", "method", "getPirgAdminIds")
 	var adminIds []int
