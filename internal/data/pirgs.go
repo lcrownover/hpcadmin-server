@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"golang.org/x/exp/slices"
@@ -48,8 +49,10 @@ func GetAllPirgs(db *sql.DB) ([]*Pirg, error) {
 }
 
 func GetPirgById(db *sql.DB, id int) (*Pirg, error) {
+	slog.Debug("querying database for pirg", "package", "data", "method", "GetPirgById")
 	var pirg Pirg
-	err := db.QueryRow("SELECT id, name, owner_id, created_at, updated_at FROM pirgs WHERE id = $1", id).Scan(&pirg.Id, &pirg.Name, &pirg.OwnerId, &pirg.CreatedAt, &pirg.UpdatedAt)
+	err := db.QueryRow("SELECT id, name, owner_id, created_at, updated_at FROM pirgs WHERE id = $1", id).Scan(&pirg.Id)
+	// TODO(lcrown): keep going. i need to be able to modify a PIRG with a PUT request
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +125,7 @@ func CreatePirg(db *sql.DB, pirg *PirgRequest) (*Pirg, error) {
 }
 
 func UpdatePirg(db *sql.DB, id int, pr *PirgRequest) (*Pirg, error) {
+	slog.Debug("updating pirg in database", "package", "data", "method", "UpdatePirg")
 	existingPirg, err := GetPirgById(db, pr.OwnerId)
 	if err != nil {
 		return nil, err

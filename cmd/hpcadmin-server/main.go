@@ -33,24 +33,24 @@ func main() {
 	flag.Parse()
 	util.ConfigureLogging(*debug)
 
-	slog.Debug("Loading configuration from file", "method", "main")
+	slog.Debug("loading configuration from file", "package", "main", "method", "main")
 	cfg, err := config.LoadFile(*configPath)
 	if err != nil {
 		fmt.Printf("Error loading configuration from file: %v\n", err)
 		os.Exit(1)
 	}
 
-	slog.Debug("Searching environment variables for overrides", "method", "main")
+	slog.Debug("searching environment variables for overrides", "package", "main", "method", "main")
 	cfg = config.LoadEnvironment(cfg)
 
-	slog.Debug("Validating Configuration", "method", "main")
+	slog.Debug("validating Configuration", "package", "main", "method", "main")
 	err = config.Validate(cfg)
 	if err != nil {
 		fmt.Printf("Error validating configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	slog.Debug("Starting hpcadmin-server", "method", "main")
+	slog.Debug("starting hpcadmin-server", "package", "main", "method", "main")
 
 	dbRequest := data.DBRequest{
 		Host:       cfg.DB.Host,
@@ -96,12 +96,10 @@ func main() {
 		r.Use(mw.APIKeyLoader)
 		r.Use(mw.OauthLoader)
 		r.Use(mw.RoleVerifier)
-		r.Mount("/api/v1", func(ctx context.Context) http.Handler {
-			r := chi.NewRouter()
+		r.Route("/api/v1", func(r chi.Router) {
 			r.Mount("/users", api.UsersRouter(ctx))
 			r.Mount("/pirgs", api.PirgsRouter(ctx))
-			return r
-		}(ctx))
+		})
 	})
 
 	// admin routes for authenticated admins
@@ -121,5 +119,8 @@ func main() {
 	docgen.PrintRoutes(r)
 
 	fmt.Println("Listening on " + listenAddr)
-	http.ListenAndServe(listenAddr, r)
+	err = http.ListenAndServe(listenAddr, r)
+	if err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+	}
 }

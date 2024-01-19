@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -105,6 +106,7 @@ func (m *Middleware) OauthLoader(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+		slog.Debug("bearer token was passed", "package", "auth", "method", "OauthLoader")
 		// authorization header is set, validate header value
 		if len(bearerString) < len("Bearer ") {
 			// bearer string doesn't contain "Bearer "
@@ -112,12 +114,14 @@ func (m *Middleware) OauthLoader(next http.Handler) http.Handler {
 			return
 		}
 		tokenString := bearerString[len("Bearer "):]
+		slog.Debug("validating token", "package", "auth", "method", "OauthLoader")
 		jwtToken, isValid, err := ac.TokenIsValid(tokenString)
 		if err != nil || !isValid {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 		ctx := context.WithValue(r.Context(), keys.JWTTokenKey, jwtToken)
+		slog.Debug("getting role from token", "package", "auth", "method", "OauthLoader")
 		role := oauth.GetJWTRoleFromToken(jwtToken)
 		ctx = context.WithValue(ctx, keys.RoleKey, role)
 		if role != "admin" {

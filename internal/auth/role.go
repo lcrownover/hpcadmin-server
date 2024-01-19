@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/lcrownover/hpcadmin-server/internal/keys"
@@ -24,13 +25,16 @@ func (m *Middleware) RoleVerifier(next http.Handler) http.Handler {
 			return
 		}
 		if role == "" {
+			slog.Debug("role is empty", "package", "auth", "method", "RoleVerifier")
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusUnauthorized)
 			return
 		}
 		if role == "unknown" {
+			slog.Debug("role is unknown", "package", "auth", "method", "RoleVerifier")
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusUnauthorized)
 			return
 		}
+		slog.Debug("role is valid", "package", "auth", "method", "RoleVerifier")
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, keys.RoleKey, role)
 

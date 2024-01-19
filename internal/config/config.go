@@ -40,20 +40,20 @@ func LoadFile(configPath string) (*ServerConfig, error) {
 	if configPath == "" {
 		configPath = "/etc/hpcadmin-server/config.yaml"
 	}
-	slog.Debug("Configuration path found", "method", "Load", "path", configPath)
+	slog.Debug("configuration path found", "package", "config", "method", "Load", "path", configPath)
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		slog.Debug("Configuration file not found", "method", "Load", "path", configPath)
+		slog.Debug("configuration file not found", "package", "config", "method", "Load", "path", configPath)
 		return cfg, nil
 	}
 
-	slog.Debug("Reading config file", "method", "Load", "path", configPath)
+	slog.Debug("reading config file", "package", "config", "method", "Load", "path", configPath)
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read configuration file: %v", err)
 	}
 
-	slog.Debug("Parsing YAML", "method", "Load", "path", configPath)
+	slog.Debug("parsing YAML", "package", "config", "method", "Load", "path", configPath)
 	err = yaml.Unmarshal(configData, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %v", err)
@@ -65,62 +65,62 @@ func LoadFile(configPath string) (*ServerConfig, error) {
 func LoadEnvironment(cfg *ServerConfig) *ServerConfig {
 	// HPCADMIN_SERVER_HOST
 	if host, found := os.LookupEnv("HPCADMIN_SERVER_HOST"); found {
-		slog.Debug("Found host override", "method", "LoadEnvironment", "host", host)
+		slog.Debug("found host override", "package", "config", "method", "LoadEnvironment", "host", host)
 		cfg.Host = host
 	}
 	// HPCADMIN_SERVER_PORT
 	if port, found := os.LookupEnv("HPCADMIN_SERVER_PORT"); found {
-		slog.Debug("Found port override", "method", "LoadEnvironment", "port", port)
+		slog.Debug("found port override", "package", "config", "method", "LoadEnvironment", "port", port)
 		iport, err := strconv.Atoi(port)
 		if err != nil {
-			slog.Warn("Invalid port number", "method", "LoadEnvironment", "port", port)
+			slog.Warn("Invalid port number", "package", "config", "method", "LoadEnvironment", "port", port)
 		} else {
 			cfg.Port = iport
 		}
 	}
 	// HPCADMIN_SERVER_DATABASE_HOST
 	if dbhost, found := os.LookupEnv("HPCADMIN_SERVER_DATABASE_HOST"); found {
-		slog.Debug("Found database host override", "method", "LoadEnvironment", "host", dbhost)
+		slog.Debug("found database host override", "package", "config", "method", "LoadEnvironment", "host", dbhost)
 		cfg.DB.Host = dbhost
 	}
 	// HPCADMIN_SERVER_DATABASE_PORT
 	if dbport, found := os.LookupEnv("HPCADMIN_SERVER_DATABASE_PORT"); found {
-		slog.Debug("Found database port override", "method", "LoadEnvironment", "port", dbport)
+		slog.Debug("found database port override", "package", "config", "method", "LoadEnvironment", "port", dbport)
 		idbport, err := strconv.Atoi(dbport)
 		if err != nil {
-			slog.Warn("Invalid database port number", "method", "LoadEnvironment", "port", dbport)
+			slog.Warn("Invalid database port number", "package", "config", "method", "LoadEnvironment", "port", dbport)
 		} else {
 			cfg.DB.Port = idbport
 		}
 	}
 	// HPCADMIN_SERVER_DATABASE_USER
 	if dbuser, found := os.LookupEnv("HPCADMIN_SERVER_DATABASE_USER"); found {
-		slog.Debug("Found database user override", "method", "LoadEnvironment", "user", dbuser)
+		slog.Debug("found database user override", "package", "config", "method", "LoadEnvironment", "user", dbuser)
 		cfg.DB.User = dbuser
 	}
 	// HPCADMIN_SERVER_DATABASE_PASSWORD
 	if dbpassword, found := os.LookupEnv("HPCADMIN_SERVER_DATABASE_USER"); found {
-		slog.Debug("Found database user override", "method", "LoadEnvironment", "password", "REDACTED")
+		slog.Debug("found database user override", "package", "config", "method", "LoadEnvironment", "password", "REDACTED")
 		cfg.DB.Password = dbpassword
 	}
 	// HPCADMIN_SERVER_DATABASE_DBNAME
 	if dbname, found := os.LookupEnv("HPCADMIN_SERVER_DATABASE_DBNAME"); found {
-		slog.Debug("Found database user override", "method", "LoadEnvironment", "dbname", dbname)
+		slog.Debug("found database user override", "package", "config", "method", "LoadEnvironment", "dbname", dbname)
 		cfg.DB.DBName = dbname
 	}
 	// HPCADMIN_SERVER_OAUTH_TENANT_ID
 	if tenantID, found := os.LookupEnv("HPCADMIN_SERVER_OAUTH_TENANT_ID"); found {
-		slog.Debug("Found oauth tenantID override", "method", "LoadEnvironment", "tenantID", tenantID)
+		slog.Debug("found oauth tenantID override", "package", "config", "method", "LoadEnvironment", "tenantID", tenantID)
 		cfg.Oauth.TenantID = tenantID
 	}
 	// HPCADMIN_SERVER_OAUTH_CLIENT_ID
 	if clientID, found := os.LookupEnv("HPCADMIN_SERVER_OAUTH_CLIENT_ID"); found {
-		slog.Debug("Found oauth clientID override", "method", "LoadEnvironment", "clientID", clientID)
+		slog.Debug("found oauth clientID override", "package", "config", "method", "LoadEnvironment", "clientID", clientID)
 		cfg.Oauth.ClientID = clientID
 	}
 	// HPCADMIN_SERVER_OAUTH_CLIENT_SECRET
 	if clientSecret, found := os.LookupEnv("HPCADMIN_SERVER_OAUTH_CLIENT_SECRET"); found {
-		slog.Debug("Found oauth clientSecret override", "method", "LoadEnvironment", "clientSecret", "REDACTED")
+		slog.Debug("found oauth clientSecret override", "package", "config", "method", "LoadEnvironment", "clientSecret", "REDACTED")
 		cfg.Oauth.ClientSecret = clientSecret
 	}
 	return cfg

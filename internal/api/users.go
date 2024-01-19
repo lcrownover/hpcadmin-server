@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -100,6 +101,7 @@ func newUserHandler(ctx context.Context) *UserHandler {
 
 // GetAllUsers returns all existing users
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("getting all users", "package", "api", "method", "GetAllUsers")
 	var users []*data.User
 
 	users, err := data.GetAllUsers(h.dbConn)
@@ -115,19 +117,9 @@ func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetUserById returns a single user by id, but is not currently used
-func (h *UserHandler) GetUserById(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(keys.UserKey).(*data.User)
-
-	resp := newUserResponse(user)
-	if err := render.Render(w, r, resp); err != nil {
-		render.Render(w, r, ErrRender(err))
-		return
-	}
-}
-
 // CreateUser creates a new user
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("creating new user", "package", "api", "method", "CreateUser")
 	userReq := &UserRequest{}
 	if err := render.Bind(r, userReq); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -156,6 +148,7 @@ func (h *UserHandler) UserCtx(next http.Handler) http.Handler {
 		var err error
 
 		userIdParam := chi.URLParam(r, "userID")
+		slog.Debug("loading specific user ctx", "id", userIdParam, "package", "api", "method", "UserCtx")
 		userId, err := strconv.Atoi(userIdParam)
 		if err != nil {
 			render.Render(w, r, ErrNotFound)
@@ -174,6 +167,7 @@ func (h *UserHandler) UserCtx(next http.Handler) http.Handler {
 
 // GetUser returns the user in the request context
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("getting user", "package", "api", "method", "GetUser")
 	user := r.Context().Value(keys.UserKey).(*data.User)
 	resp := newUserResponse(user)
 	if err := render.Render(w, r, resp); err != nil {
@@ -183,6 +177,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates a user
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("updating user", "package", "api", "method", "UpdateUser")
 	user := r.Context().Value(keys.UserKey).(*data.User)
 	userReq := newUserRequest(user)
 	if err := render.Bind(r, userReq); err != nil {
@@ -208,6 +203,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("deleting user", "package", "api", "method", "DeleteUser")
 	user := r.Context().Value(keys.UserKey).(*data.User)
 	err := data.DeleteUser(h.dbConn, user.Id)
 	if err != nil {

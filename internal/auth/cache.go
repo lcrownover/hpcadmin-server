@@ -46,33 +46,33 @@ func (a *AuthCache) TokenIsValid(token string) (*jwt.Token, bool, error) {
 	}
 
 	// otherwise, check if the token is valid and return it
-	slog.Debug("token is not in cache, parsing token", "method", "TokenIsValid")
+	slog.Debug("token is not in cache, parsing token", "package", "auth", "method", "TokenIsValid")
 	jwtToken, err = oauth.GetJWTFromTokenString(token)
 	if err != nil {
 		return nil, false, err
 	}
 
-	slog.Debug("token parsed, checking if token is valid", "method", "TokenIsValid")
+	slog.Debug("token parsed, checking if token is valid", "package", "auth", "method", "TokenIsValid")
 	isValid := oauth.JWTTokenIsValid(jwtToken)
 	if !isValid {
-		slog.Debug("token is not valid, failing authentication", "method", "TokenIsValid")
+		slog.Debug("token is not valid, failing authentication", "package", "auth", "method", "TokenIsValid")
 		return nil, false, nil
 	}
-	slog.Debug("token is valid", "method", "TokenIsValid")
+	slog.Debug("token is valid", "package", "auth", "method", "TokenIsValid")
 
 	a.CacheJWTToken(token, jwtToken)
 
-	slog.Debug("token added to cache, returning success", "method", "TokenIsValid")
+	slog.Debug("token added to cache, returning success", "package", "auth", "method", "TokenIsValid")
 	return jwtToken, true, nil
 }
 
 // LookupCachedToken checks if the token is in the cache and returns it if it is
 func (a *AuthCache) LookupCachedToken(token string) (*jwt.Token, bool, error) {
-	slog.Debug("checking if token is in cache", "method", "TokenIsValid")
+	slog.Debug("checking if token is in cache", "package", "auth", "method", "TokenIsValid")
 	if cache, ok := a.JWTTokenCache[token]; ok {
-		slog.Debug("token is in cache", "method", "TokenIsValid")
+		slog.Debug("token is in cache", "package", "auth", "method", "TokenIsValid")
 		if cache.JWTToken.Valid && cache.ValidUntil > jwt.TimeFunc().Unix() {
-			slog.Debug("token is valid and not expired", "method", "TokenIsValid")
+			slog.Debug("token is valid and not expired", "package", "auth", "method", "TokenIsValid")
 			return a.JWTTokenCache[token].JWTToken, true, nil
 		}
 	}
@@ -81,7 +81,7 @@ func (a *AuthCache) LookupCachedToken(token string) (*jwt.Token, bool, error) {
 
 // CacheJWTToken adds the token to the cache
 func (a *AuthCache) CacheJWTToken(token string, jwtToken *jwt.Token) {
-	slog.Debug("adding to cache", "method", "TokenIsValid")
+	slog.Debug("adding to cache", "package", "auth", "method", "TokenIsValid")
 	a.JWTTokenCache[token] = TokenCache{
 		TokenString: token,
 		ValidUntil:  int64(jwtToken.Claims.(jwt.MapClaims)["exp"].(float64)),
@@ -92,21 +92,21 @@ func (a *AuthCache) CacheJWTToken(token string, jwtToken *jwt.Token) {
 // LookupCachedAPIKey checks if the api key is in the cache 
 // returns the role if found, "unknown" if not found
 func (a *AuthCache) LookupCachedAPIKey(key string) string {
-	slog.Debug("checking if api key is in cache", "method", "LookupCachedAPIKey")
+	slog.Debug("checking if api key is in cache", "package", "auth", "method", "LookupCachedAPIKey")
 	if cache, ok := a.APITokenCache[key]; ok {
-		slog.Debug("api key is in cache", "method", "LookupCachedAPIKey")
+		slog.Debug("api key is in cache", "package", "auth", "method", "LookupCachedAPIKey")
 		return cache.Role
 	}
-	slog.Debug("api key not found in cache", "method", "LookupCachedAPIKey")
+	slog.Debug("api key not found in cache", "package", "auth", "method", "LookupCachedAPIKey")
 	return "unknown"
 }
 
 // CacheAPIKey adds the api key to the cache
 func (a *AuthCache) CacheAPIKey(key string, role string) {
-	slog.Debug("adding api key to cache", "role", role, "method", "CacheAPIKey")
+	slog.Debug("adding api key to cache", "role", role, "package", "auth", "method", "CacheAPIKey")
 	a.APITokenCache[key] = APIKeyCache{
 		Key:  key,
 		Role: role,
 	}
-	slog.Debug("cached api key", "method", "CacheAPIKey")
+	slog.Debug("cached api key", "package", "auth", "method", "CacheAPIKey")
 }
