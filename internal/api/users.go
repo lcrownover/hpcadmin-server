@@ -16,12 +16,12 @@ import (
 )
 
 type UserResponse struct {
-	Id        int       `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"firstname"`
-	LastName  string    `json:"lastname"`
-	CreatedAt time.Time `json:"created_at"`
+	Id         int       `json:"id"`
+	Username   string    `json:"username"`
+	Email      string    `json:"email"`
+	FirstName  string    `json:"firstname"`
+	LastName   string    `json:"lastname"`
+	CreatedAt  time.Time `json:"created_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
@@ -101,19 +101,37 @@ func newUserHandler(ctx context.Context) *UserHandler {
 
 // GetAllUsers returns all existing users
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("getting all users", "package", "api", "method", "GetAllUsers")
-	var users []*data.User
+	searchUsername := r.URL.Query().Get("username")
+	// username query parameter exists, so we are looking for a specific user
+	// TODO(lcrown): why are both arms of this if statement running???
+	if searchUsername != "" {
+		slog.Debug("getting user by username", "package", "api", "method", "GetAllUsers")
+		user, err := data.GetUserByUsername(h.dbConn, searchUsername)
+		if err != nil {
+			render.Render(w, r, ErrNotFound)
+			return
+		}
+		resp := newUserResponse(user)
+		if err := render.Render(w, r, resp); err != nil {
+			render.Render(w, r, ErrRender(err))
+			return
+		}
+	} else {
+		// username query parameter doesn't exist, so we are looking for all users
+		slog.Debug("getting all users", "package", "api", "method", "GetAllUsers")
+		var users []*data.User
 
-	users, err := data.GetAllUsers(h.dbConn)
-	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
-		return
-	}
+		users, err := data.GetAllUsers(h.dbConn)
+		if err != nil {
+			render.Render(w, r, ErrInternalServer(err))
+			return
+		}
 
-	resp := newUserResponseList(users)
-	if err := render.RenderList(w, r, resp); err != nil {
-		render.Render(w, r, ErrRender(err))
-		return
+		resp := newUserResponseList(users)
+		if err := render.RenderList(w, r, resp); err != nil {
+			render.Render(w, r, ErrRender(err))
+			return
+		}
 	}
 }
 

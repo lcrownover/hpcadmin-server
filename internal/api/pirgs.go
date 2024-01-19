@@ -17,12 +17,12 @@ import (
 )
 
 type PirgResponse struct {
-	Id        int       `json:"id"`
-	Name      string    `json:"name"`
-	OwnerId   int       `json:"owner_id"`
-	AdminIds  []int     `json:"admin_ids"`
-	UserIds   []int     `json:"user_ids"`
-	CreatedAt time.Time `json:"created_at"`
+	Id         int       `json:"id"`
+	Name       string    `json:"name"`
+	OwnerId    int       `json:"owner_id"`
+	AdminIds   []int     `json:"admin_ids"`
+	UserIds    []int     `json:"user_ids"`
+	CreatedAt  time.Time `json:"created_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
@@ -36,12 +36,12 @@ func (u *PirgResponse) Render(w http.ResponseWriter, r *http.Request) error {
 
 func newPirgResponse(u *data.Pirg) *PirgResponse {
 	return &PirgResponse{
-		Id:        u.Id,
-		Name:      u.Name,
-		OwnerId:   u.OwnerId,
-		AdminIds:  u.AdminIds,
-		UserIds:   u.UserIds,
-		CreatedAt: u.CreatedAt,
+		Id:         u.Id,
+		Name:       u.Name,
+		OwnerId:    u.OwnerId,
+		AdminIds:   u.AdminIds,
+		UserIds:    u.UserIds,
+		CreatedAt:  u.CreatedAt,
 		ModifiedAt: u.ModifiedAt,
 	}
 }
@@ -130,19 +130,36 @@ func newPirgHandler(ctx context.Context) *PirgHandler {
 
 // GetAllPirgs returns all existing Pirgs
 func (h *PirgHandler) GetAllPirgs(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("getting all pirgs", "package", "api", "method", "GetAllPirgs")
-	var pirgs []*data.Pirg
+	searchName := r.URL.Query().Get("name")
+	// name passed as query param, get specific pirg
+	if searchName != "" {
+		slog.Debug("getting pirg by name", "package", "api", "method", "GetAllPirgs")
+		pirg, err := data.GetPirgByName(h.dbConn, searchName)
+		if err != nil {
+			render.Render(w, r, ErrNotFound)
+			return
+		}
+		resp := newPirgResponse(pirg)
+		if err := render.Render(w, r, resp); err != nil {
+			render.Render(w, r, ErrRender(err))
+			return
+		}
+	} else {
+		// no name passed as query param, get all pirgs
+		slog.Debug("getting all pirgs", "package", "api", "method", "GetAllPirgs")
+		var pirgs []*data.Pirg
 
-	pirgs, err := data.GetAllPirgs(h.dbConn)
-	if err != nil {
-		render.Render(w, r, ErrInternalServer(err))
-		return
-	}
+		pirgs, err := data.GetAllPirgs(h.dbConn)
+		if err != nil {
+			render.Render(w, r, ErrInternalServer(err))
+			return
+		}
 
-	resp := newPirgResponseList(pirgs)
-	if err := render.RenderList(w, r, resp); err != nil {
-		render.Render(w, r, ErrRender(err))
-		return
+		resp := newPirgResponseList(pirgs)
+		if err := render.RenderList(w, r, resp); err != nil {
+			render.Render(w, r, ErrRender(err))
+			return
+		}
 	}
 }
 
