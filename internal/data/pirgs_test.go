@@ -68,3 +68,8 @@ func TestGetAllPirgs(t *testing.T) {
 		t.Fatal("expected 2 pirgs: ", len(pirgs))
 	}
 }
+
+// TODO(lcrown): 
+// GetOne
+// Update?
+// Delete

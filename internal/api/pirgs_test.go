@@ -10,21 +10,22 @@ import (
 	"github.com/lcrownover/hpcadmin-server/internal/data"
 )
 
-func TestAPICreateUser(t *testing.T) {
+func TestAPICreatePirg(t *testing.T) {
 	th := NewTestDataHandler()
+	// TODO(lcrown): create a user in the beginning of all these, then fix all the tests
 
-	// first we need to create a user, then get it back
-	ur := UserRequest{
-		Username:  "testapicreateuser",
-		Email:     "testapicreateuser@localhost",
+	// first we need to create a pirg, then get it back
+	ur := PirgRequest{
+		Name:  "testapicreatepirg",
+		Email:     "testapicreatepirg@localhost",
 		FirstName: "TestAPI",
-		LastName:  "CreateUser",
+		LastName:  "CreatePirg",
 	}
-	userReq, err := json.Marshal(ur)
+	pirgReq, err := json.Marshal(ur)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/users", bytes.NewBuffer([]byte(userReq)))
+	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/pirgs", bytes.NewBuffer([]byte(pirgReq)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,18 +41,18 @@ func TestAPICreateUser(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	var userResponse UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&userResponse)
+	var pirgResponse PirgResponse
+	err = json.NewDecoder(resp.Body).Decode(&pirgResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	u, err := data.GetUserById(th.DB, userResponse.Id)
+	u, err := data.GetPirgById(th.DB, pirgResponse.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u.Username != ur.Username {
-		t.Errorf("expected username %v got %v", ur.Username, u.Username)
+	if u.Pirgname != ur.Pirgname {
+		t.Errorf("expected pirgname %v got %v", ur.Pirgname, u.Pirgname)
 	}
 	if u.Email != ur.Email {
 		t.Errorf("expected email %v got %v", ur.Email, u.Email)
@@ -64,21 +65,21 @@ func TestAPICreateUser(t *testing.T) {
 	}
 }
 
-// TestGetAllUsers tests the GET /api/v1/users endpoint
-// it creates a user, then gets all users and checks that the created user is in the list
-func TestAPIGetAllUsers(t *testing.T) {
-	// first we need to create a user, then get it back
-	ur := UserRequest{
-		Username:  "testapigetallusers",
-		Email:     "testapigetallusers@localhost",
+// TestGetAllPirgs tests the GET /api/v1/pirgs endpoint
+// it creates a pirg, then gets all pirgs and checks that the created pirg is in the list
+func TestAPIGetAllPirgs(t *testing.T) {
+	// first we need to create a pirg, then get it back
+	ur := PirgRequest{
+		Pirgname:  "testapigetallpirgs",
+		Email:     "testapigetallpirgs@localhost",
 		FirstName: "TestAPI",
-		LastName:  "GetAllUsers",
+		LastName:  "GetAllPirgs",
 	}
-	userReq, err := json.Marshal(ur)
+	pirgReq, err := json.Marshal(ur)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/users", bytes.NewBuffer([]byte(userReq)))
+	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/pirgs", bytes.NewBuffer([]byte(pirgReq)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,8 +96,8 @@ func TestAPIGetAllUsers(t *testing.T) {
 			resp.StatusCode, http.StatusCreated)
 	}
 
-	// now get all users
-	req, err = http.NewRequest("GET", "http://localhost:3333/api/v1/users", nil)
+	// now get all pirgs
+	req, err = http.NewRequest("GET", "http://localhost:3333/api/v1/pirgs", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,44 +113,44 @@ func TestAPIGetAllUsers(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	var usersResponse []UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&usersResponse)
+	var pirgsResponse []PirgResponse
+	err = json.NewDecoder(resp.Body).Decode(&pirgsResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// check if the usersResponse has more than 1 user
-	if len(usersResponse) < 1 {
-		t.Errorf("expected more than 1 user, got %v", len(usersResponse))
+	// check if the pirgsResponse has more than 1 pirg
+	if len(pirgsResponse) < 1 {
+		t.Errorf("expected more than 1 pirg, got %v", len(pirgsResponse))
 	}
 
-	// check if the user we created is in the list
+	// check if the pirg we created is in the list
 	found := false
-	for _, user := range usersResponse {
-		if user.Username == ur.Username {
+	for _, pirg := range pirgsResponse {
+		if pirg.Pirgname == ur.Pirgname {
 			found = true
 		}
 	}
 	if !found {
-		t.Errorf("expected to find user %v in the list of users", ur.Username)
+		t.Errorf("expected to find pirg %v in the list of pirgs", ur.Pirgname)
 	}
 }
 
-func TestAPIUpdateUser(t *testing.T) {
+func TestAPIUpdatePirg(t *testing.T) {
 	th := NewTestDataHandler()
 
-	// first we need to create a user, then get it back
-	ur := UserRequest{
-		Username:  "testapiupdateuser",
-		Email:     "testapiupdateuser@localhost",
+	// first we need to create a pirg, then get it back
+	ur := PirgRequest{
+		Pirgname:  "testapiupdatepirg",
+		Email:     "testapiupdatepirg@localhost",
 		FirstName: "TestAPI",
-		LastName:  "UpdateUser",
+		LastName:  "UpdatePirg",
 	}
-	userReq, err := json.Marshal(ur)
+	pirgReq, err := json.Marshal(ur)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/users", bytes.NewBuffer([]byte(userReq)))
+	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/pirgs", bytes.NewBuffer([]byte(pirgReq)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,18 +166,18 @@ func TestAPIUpdateUser(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	var userResponse UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&userResponse)
+	var pirgResponse PirgResponse
+	err = json.NewDecoder(resp.Body).Decode(&pirgResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	u, err := data.GetUserById(th.DB, userResponse.Id)
+	u, err := data.GetPirgById(th.DB, pirgResponse.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u.Username != ur.Username {
-		t.Errorf("expected username %v got %v", ur.Username, u.Username)
+	if u.Pirgname != ur.Pirgname {
+		t.Errorf("expected pirgname %v got %v", ur.Pirgname, u.Pirgname)
 	}
 	if u.Email != ur.Email {
 		t.Errorf("expected email %v got %v", ur.Email, u.Email)
@@ -188,19 +189,19 @@ func TestAPIUpdateUser(t *testing.T) {
 		t.Errorf("expected lastname %v got %v", ur.LastName, u.LastName)
 	}
 
-	// now update the user
-	ur2 := UserRequest{
-		Username:  "testapiupdateuser",
-		Email:     "testapiupdateuser2@localhost",
+	// now update the pirg
+	ur2 := PirgRequest{
+		Pirgname:  "testapiupdatepirg",
+		Email:     "testapiupdatepirg2@localhost",
 		FirstName: "TestAPI2",
-		LastName:  "UpdateUser2",
+		LastName:  "UpdatePirg2",
 	}
-	userReq2, err := json.Marshal(ur2)
+	pirgReq2, err := json.Marshal(ur2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	updateURL := fmt.Sprintf("http://localhost:3333/api/v1/users/%d", userResponse.Id)
-	req, err = http.NewRequest("PUT", updateURL, bytes.NewBuffer([]byte(userReq2)))
+	updateURL := fmt.Sprintf("http://localhost:3333/api/v1/pirgs/%d", pirgResponse.Id)
+	req, err = http.NewRequest("PUT", updateURL, bytes.NewBuffer([]byte(pirgReq2)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,17 +217,17 @@ func TestAPIUpdateUser(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	userResponse = UserResponse{}
-	err = json.NewDecoder(resp.Body).Decode(&userResponse)
+	pirgResponse = PirgResponse{}
+	err = json.NewDecoder(resp.Body).Decode(&pirgResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
-	u, err = data.GetUserById(th.DB, userResponse.Id)
+	u, err = data.GetPirgById(th.DB, pirgResponse.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u.Username != ur2.Username {
-		t.Errorf("expected username %v got %v", ur2.Username, u.Username)
+	if u.Pirgname != ur2.Pirgname {
+		t.Errorf("expected pirgname %v got %v", ur2.Pirgname, u.Pirgname)
 	}
 	if u.Email != ur2.Email {
 		t.Errorf("expected email %v got %v", ur2.Email, u.Email)
@@ -239,21 +240,21 @@ func TestAPIUpdateUser(t *testing.T) {
 	}
 }
 
-func TestAPIDeleteUser(t *testing.T) {
+func TestAPIDeletePirg(t *testing.T) {
 	th := NewTestDataHandler()
 
-	// first we need to create a user, then delete it
-	ur := UserRequest{
-		Username:  "testapideleteuser",
-		Email:     "testapideleteuser@localhost",
+	// first we need to create a pirg, then delete it
+	ur := PirgRequest{
+		Pirgname:  "testapideletepirg",
+		Email:     "testapideletepirg@localhost",
 		FirstName: "TestAPI",
-		LastName:  "deleteUser",
+		LastName:  "deletePirg",
 	}
-	userReq, err := json.Marshal(ur)
+	pirgReq, err := json.Marshal(ur)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/users", bytes.NewBuffer([]byte(userReq)))
+	req, err := http.NewRequest("POST", "http://localhost:3333/api/v1/pirgs", bytes.NewBuffer([]byte(pirgReq)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,18 +270,18 @@ func TestAPIDeleteUser(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusCreated)
 	}
-	var userResponse UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&userResponse)
+	var pirgResponse PirgResponse
+	err = json.NewDecoder(resp.Body).Decode(&pirgResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	u, err := data.GetUserById(th.DB, userResponse.Id)
+	u, err := data.GetPirgById(th.DB, pirgResponse.Id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if u.Username != ur.Username {
-		t.Errorf("expected username %v got %v", ur.Username, u.Username)
+	if u.Pirgname != ur.Pirgname {
+		t.Errorf("expected pirgname %v got %v", ur.Pirgname, u.Pirgname)
 	}
 	if u.Email != ur.Email {
 		t.Errorf("expected email %v got %v", ur.Email, u.Email)
@@ -292,9 +293,9 @@ func TestAPIDeleteUser(t *testing.T) {
 		t.Errorf("expected lastname %v got %v", ur.LastName, u.LastName)
 	}
 
-	// now delete the user
-	deleteURL := fmt.Sprintf("http://localhost:3333/api/v1/users/%d", userResponse.Id)
-	req, err = http.NewRequest("DELETE", deleteURL, bytes.NewBuffer([]byte(userReq)))
+	// now delete the pirg
+	deleteURL := fmt.Sprintf("http://localhost:3333/api/v1/pirgs/%d", pirgResponse.Id)
+	req, err = http.NewRequest("DELETE", deleteURL, bytes.NewBuffer([]byte(pirgReq)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,8 +312,8 @@ func TestAPIDeleteUser(t *testing.T) {
 			resp.StatusCode, http.StatusOK)
 	}
 
-	// now try to get the user again, should get an error
-	req, err = http.NewRequest("GET", "http://localhost:3333/api/v1/users", nil)
+	// now try to get the pirg again, should get an error
+	req, err = http.NewRequest("GET", "http://localhost:3333/api/v1/pirgs", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,20 +329,20 @@ func TestAPIDeleteUser(t *testing.T) {
 		t.Fatalf("handler returned wrong status code: got %v want %v",
 			resp.StatusCode, http.StatusOK)
 	}
-	var usersResponse []UserResponse
-	err = json.NewDecoder(resp.Body).Decode(&usersResponse)
+	var pirgsResponse []PirgResponse
+	err = json.NewDecoder(resp.Body).Decode(&pirgsResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// make sure the user is not in the list
+	// make sure the pirg is not in the list
 	found := false
-	for _, user := range usersResponse {
-		if user.Username == ur.Username {
+	for _, pirg := range pirgsResponse {
+		if pirg.Pirgname == ur.Pirgname {
 			found = true
 		}
 	}
 	if found {
-		t.Error("found user that should have been deleted")
+		t.Error("found pirg that should have been deleted")
 	}
 }

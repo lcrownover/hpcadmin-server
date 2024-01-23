@@ -196,7 +196,13 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 // UpdateUser updates a user
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("updating user", "package", "api", "method", "UpdateUser")
+	// existing user comes from the request context because
+	// `userID` is part of the URL.
 	user := r.Context().Value(keys.UserKey).(*data.User)
+	// create a new UserRequest object
+	// so that it contains all the fields of the existing user
+	// then bind the request body to it so that the new values
+	// from the request body are updated in the UserRequest object
 	userReq := newUserRequest(user)
 	if err := render.Bind(r, userReq); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
